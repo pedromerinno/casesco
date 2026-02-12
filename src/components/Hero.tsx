@@ -31,9 +31,9 @@ const Hero = () => {
           initial={{ opacity: 0, y: 20 }}
           animate={{ opacity: 1, y: 0 }}
           transition={{ duration: 0.6 }}
-          className="text-primary font-display text-sm tracking-[0.3em] uppercase mb-6"
+          className="inline-flex items-center rounded-full bg-primary/10 text-primary font-body text-sm font-medium px-4 py-2 mb-6"
         >
-          Full-Service Creative Agency
+          Full-service creative agency
         </motion.p>
 
         <motion.h1
