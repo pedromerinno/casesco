@@ -11,7 +11,7 @@ import Footer from "@/components/Footer";
 
 const Index = () => {
   return (
-    <main className="bg-background text-foreground overflow-x-hidden">
+    <main className="bg-background text-foreground">
       <Hero />
       <ClientLogosMarquee />
       <Positioning />

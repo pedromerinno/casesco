@@ -9,7 +9,7 @@ const Positioning = () => {
           whileInView={{ opacity: 1, y: 0 }}
           viewport={{ once: true }}
           transition={{ duration: 0.7 }}
-          className="text-3xl md:text-5xl font-display font-bold mb-6"
+          className="text-3xl md:text-5xl font-display font-bold mb-6 mx-auto max-w-[16ch] md:max-w-[18ch] lg:max-w-[20ch]"
         >
           ONMX é onde campanhas viram{" "}
           <span className="text-gradient">movimento.</span>
