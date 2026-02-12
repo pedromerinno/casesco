@@ -1,4 +1,5 @@
 import Hero from "@/components/Hero";
+import ClientLogosMarquee from "@/components/ClientLogosMarquee";
 import Positioning from "@/components/Positioning";
 import Services from "@/components/Services";
 import Differentials from "@/components/Differentials";
@@ -12,6 +13,7 @@ const Index = () => {
   return (
     <main className="bg-background text-foreground overflow-x-hidden">
       <Hero />
+      <ClientLogosMarquee />
       <Positioning />
       <Services />
       <Differentials />

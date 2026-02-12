@@ -3,9 +3,7 @@ const Footer = () => {
     <footer className="px-6 md:px-12 lg:px-20 py-10 border-t border-border">
       <div className="max-w-6xl mx-auto flex flex-col md:flex-row items-center justify-between gap-6">
         <div className="text-center md:text-left">
-          <span className="font-display text-xl font-bold text-foreground">
-            ONM<span className="text-primary">X</span>
-          </span>
+          <span className="font-display text-xl font-bold text-primary">ONMX</span>
           <p className="text-sm text-muted-foreground mt-1">
             Parte do ecossistema MERINNO Creative Group
           </p>

@@ -1,12 +1,14 @@
 import { motion } from "framer-motion";
+import type { LucideIcon } from "lucide-react";
+import { BarChart3, Megaphone, Palette, Target, Video, Smartphone } from "lucide-react";
 
-const services = [
-  { title: "Campanhas institucionais e de produto", icon: "📣" },
-  { title: "Estratégia de comunicação e posicionamento", icon: "🎯" },
-  { title: "Direção criativa e design systems", icon: "✦" },
-  { title: "Conteúdo e social media premium", icon: "📱" },
-  { title: "Materiais comerciais e apresentações", icon: "📊" },
-  { title: "Produção audiovisual, motion e 3D", icon: "🎬" },
+const services: { title: string; icon: LucideIcon }[] = [
+  { title: "Campanhas institucionais e de produto", icon: Megaphone },
+  { title: "Estratégia de comunicação e posicionamento", icon: Target },
+  { title: "Direção criativa e design systems", icon: Palette },
+  { title: "Conteúdo e social media premium", icon: Smartphone },
+  { title: "Materiais comerciais e apresentações", icon: BarChart3 },
+  { title: "Produção audiovisual, motion e 3D", icon: Video },
 ];
 
 const Services = () => {
@@ -41,7 +43,9 @@ const Services = () => {
               transition={{ duration: 0.5, delay: i * 0.08 }}
               className="group p-6 md:p-8 rounded-2xl bg-card border border-border hover:border-primary/30 transition-all duration-300"
             >
-              <span className="text-2xl mb-4 block">{service.icon}</span>
+              <div className="mb-4 inline-flex h-11 w-11 items-center justify-center rounded-xl bg-accent text-primary ring-1 ring-border/60 transition-colors group-hover:bg-primary/10 group-hover:ring-primary/20">
+                <service.icon className="h-5 w-5" aria-hidden="true" />
+              </div>
               <h3 className="font-display font-semibold text-lg text-foreground group-hover:text-primary transition-colors">
                 {service.title}
               </h3>

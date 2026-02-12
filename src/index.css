@@ -1,4 +1,4 @@
-@import url('https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@300;400;500;600;700&family=Inter:ital,wght@0,300;0,400;0,500;0,600;1,400&display=swap');
+@import url('https://fonts.googleapis.com/css2?family=Inter:ital,wght@0,300;0,400;0,500;0,600;0,700;1,400&display=swap');
 
 @tailwind base;
 @tailwind components;
@@ -6,44 +6,87 @@
 
 @layer base {
   :root {
-    --background: 220 20% 6%;
-    --foreground: 40 20% 92%;
+    color-scheme: light;
+    --background: 0 0% 100%;
+    --foreground: 222 47% 11%;
 
-    --card: 220 18% 10%;
-    --card-foreground: 40 20% 92%;
+    --card: 240 6% 98%;
+    --card-foreground: 222 47% 11%;
 
-    --popover: 220 18% 10%;
-    --popover-foreground: 40 20% 92%;
+    --popover: 0 0% 100%;
+    --popover-foreground: 222 47% 11%;
 
-    --primary: 38 80% 55%;
-    --primary-foreground: 220 20% 6%;
+    /* Brand accent (roxo) */
+    --primary: 262 83% 58%;
+    --primary-foreground: 0 0% 100%;
 
-    --secondary: 220 15% 14%;
-    --secondary-foreground: 40 15% 80%;
+    --secondary: 240 6% 97%;
+    --secondary-foreground: 222 16% 35%;
 
-    --muted: 220 15% 14%;
-    --muted-foreground: 220 10% 50%;
+    --muted: 240 6% 97%;
+    --muted-foreground: 222 12% 45%;
 
-    --accent: 38 80% 55%;
-    --accent-foreground: 220 20% 6%;
+    /* Subtle purple tint for hovers/selection */
+    --accent: 262 90% 96%;
+    --accent-foreground: 262 60% 25%;
 
     --destructive: 0 84.2% 60.2%;
     --destructive-foreground: 210 40% 98%;
 
-    --border: 220 15% 18%;
-    --input: 220 15% 18%;
-    --ring: 38 80% 55%;
+    --border: 240 6% 90%;
+    --input: 240 6% 90%;
+    --ring: 262 83% 58%;
 
-    --radius: 0.5rem;
+    --radius: 0.75rem;
 
-    --sidebar-background: 220 18% 8%;
-    --sidebar-foreground: 40 20% 92%;
-    --sidebar-primary: 38 80% 55%;
-    --sidebar-primary-foreground: 220 20% 6%;
-    --sidebar-accent: 220 15% 14%;
-    --sidebar-accent-foreground: 40 20% 92%;
-    --sidebar-border: 220 15% 18%;
-    --sidebar-ring: 38 80% 55%;
+    --sidebar-background: 0 0% 100%;
+    --sidebar-foreground: 222 47% 11%;
+    --sidebar-primary: 262 83% 58%;
+    --sidebar-primary-foreground: 0 0% 100%;
+    --sidebar-accent: 262 90% 96%;
+    --sidebar-accent-foreground: 262 60% 25%;
+    --sidebar-border: 240 6% 90%;
+    --sidebar-ring: 262 83% 58%;
+  }
+
+  .dark {
+    color-scheme: dark;
+    --background: 222 47% 7%;
+    --foreground: 0 0% 98%;
+
+    --card: 222 47% 10%;
+    --card-foreground: 0 0% 98%;
+
+    --popover: 222 47% 10%;
+    --popover-foreground: 0 0% 98%;
+
+    --primary: 262 83% 66%;
+    --primary-foreground: 222 47% 7%;
+
+    --secondary: 222 22% 14%;
+    --secondary-foreground: 220 10% 80%;
+
+    --muted: 222 22% 14%;
+    --muted-foreground: 220 10% 58%;
+
+    --accent: 262 35% 18%;
+    --accent-foreground: 0 0% 98%;
+
+    --destructive: 0 84.2% 60.2%;
+    --destructive-foreground: 210 40% 98%;
+
+    --border: 222 18% 18%;
+    --input: 222 18% 18%;
+    --ring: 262 83% 66%;
+
+    --sidebar-background: 222 47% 8%;
+    --sidebar-foreground: 0 0% 98%;
+    --sidebar-primary: 262 83% 66%;
+    --sidebar-primary-foreground: 222 47% 7%;
+    --sidebar-accent: 222 22% 14%;
+    --sidebar-accent-foreground: 0 0% 98%;
+    --sidebar-border: 222 18% 18%;
+    --sidebar-ring: 262 83% 66%;
   }
 }
 
@@ -63,7 +106,11 @@
 
 @layer utilities {
   .text-gradient {
-    @apply bg-clip-text text-transparent bg-gradient-to-r from-primary via-amber-400 to-primary;
+    @apply bg-clip-text text-transparent bg-gradient-to-r from-primary via-violet-400 to-primary;
+  }
+
+  .marquee {
+    animation: marquee var(--marquee-duration, 45s) linear infinite;
   }
 
   .section-padding {
@@ -78,6 +125,15 @@
   .animate-fade-in {
     animation: fadeIn 0.6s ease-out forwards;
     opacity: 0;
+  }
+}
+
+@keyframes marquee {
+  from {
+    transform: translateX(0);
+  }
+  to {
+    transform: translateX(-50%);
   }
 }
 

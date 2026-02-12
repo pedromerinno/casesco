@@ -30,7 +30,7 @@ const Method = () => {
           Processo claro. Entrega previsível.
         </motion.h2>
 
-        <div className="grid grid-cols-1 md:grid-cols-5 gap-4">
+        <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-5 gap-4">
           {steps.map((step, i) => (
             <motion.div
               key={step.num}
@@ -38,7 +38,7 @@ const Method = () => {
               whileInView={{ opacity: 1, y: 0 }}
               viewport={{ once: true }}
               transition={{ duration: 0.5, delay: i * 0.1 }}
-              className="relative p-6 rounded-2xl bg-card border border-border group hover:border-primary/30 transition-colors"
+              className="relative min-h-40 p-7 md:p-8 rounded-2xl bg-card border border-border group hover:border-primary/30 transition-colors"
             >
               <span className="text-3xl font-display font-bold text-primary/30 group-hover:text-primary/60 transition-colors">
                 {step.num}
