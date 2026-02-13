@@ -2,7 +2,15 @@ import * as React from "react";
 import { motion } from "framer-motion";
 import gsap from "gsap";
 import type { LucideIcon } from "lucide-react";
-import { BarChart3, Megaphone, Palette, Target, Video, Smartphone } from "lucide-react";
+import {
+  BarChart3,
+  Megaphone,
+  Palette,
+  Target,
+  Video,
+  Smartphone,
+  Monitor,
+} from "lucide-react";
 
 const services: Array<{
   title: string;
@@ -10,6 +18,11 @@ const services: Array<{
   description: string;
   icon: LucideIcon;
   accent: "violet" | "indigo" | "pink";
+  media?: {
+    src: string;
+    alt?: string;
+    fit?: "contain" | "cover";
+  };
 }> = [
   {
     title: "Campanhas institucionais e de produto",
@@ -26,6 +39,11 @@ const services: Array<{
       "Clareza de narrativa, arquitetura de mensagens e foco no que move decisão.",
     icon: Target,
     accent: "indigo",
+    media: {
+      src: "/estrategia-comunic.webp",
+      alt: "",
+      fit: "cover",
+    },
   },
   {
     title: "Direção criativa e design systems",
@@ -42,6 +60,11 @@ const services: Array<{
       "Cadência, consistência e formatos que performam sem perder a marca.",
     icon: Smartphone,
     accent: "pink",
+    media: {
+      src: "/prod-conteudo.gif",
+      alt: "",
+      fit: "cover",
+    },
   },
   {
     title: "Materiais comerciais e apresentações",
@@ -50,14 +73,27 @@ const services: Array<{
       "Decks e assets de vendas com narrativa, hierarquia e acabamento premium.",
     icon: BarChart3,
     accent: "indigo",
+    media: {
+      src: "/Maleta_02_Animacao.gif",
+      alt: "",
+      fit: "cover",
+    },
   },
   {
-    title: "Produção audiovisual, motion e 3D",
-    displayTitle: ["Produção audiovisual,", "motion e 3D"],
+    title: "Projetos 3D e Motion",
+    displayTitle: ["Projetos 3D", "e Motion"],
     description:
-      "Vídeo, motion e 3D para elevar percepção, explicar e convencer.",
+      "Motion e 3D para elevar percepção, explicar e convencer.",
     icon: Video,
     accent: "violet",
+  },
+  {
+    title: "Produtos digitais",
+    displayTitle: ["Produtos", "digitais"],
+    description:
+      "Design e desenvolvimento de experiências digitais com performance, clareza e acabamento premium.",
+    icon: Monitor,
+    accent: "indigo",
   },
 ];
 
@@ -133,6 +169,13 @@ const Services = () => {
         ? "bg-pink-500/10 text-pink-600 ring-pink-500/15"
         : "bg-primary/10 text-primary ring-primary/15";
 
+  const descriptionToneClass =
+    active.accent === "indigo"
+      ? "text-indigo-950/70 dark:text-indigo-50/80"
+      : active.accent === "pink"
+        ? "text-pink-950/70 dark:text-pink-50/80"
+        : "text-primary/85 dark:text-primary-foreground/80";
+
   return (
     <section id="servicos" className="section-padding scroll-mt-24">
       <div className="max-w-7xl mx-auto">
@@ -204,14 +247,62 @@ const Services = () => {
               <div className="absolute -bottom-28 -left-28 h-80 w-80 rounded-full bg-white/20 blur-3xl pointer-events-none" />
 
               <div ref={cardContentRef} className="relative w-full p-10 md:p-12">
-                <div className="aspect-square w-full rounded-3xl bg-background/35 ring-1 ring-white/35 grid place-items-center">
-                  <ActiveIcon
-                    className="h-28 w-28 md:h-36 md:w-36 opacity-25"
-                    aria-hidden="true"
-                  />
+                <div
+                  className={
+                    "relative aspect-square w-full overflow-hidden rounded-3xl bg-background/35 ring-1 ring-white/35 " +
+                    (active.media ? "" : "grid place-items-center")
+                  }
+                >
+                  {active.media ? (
+                    reduceMotion ? (
+                      <img
+                        src={active.media.src}
+                        alt={active.media.alt ?? ""}
+                        aria-hidden={active.media.alt ? undefined : "true"}
+                        className={
+                          "absolute inset-0 h-full w-full pointer-events-none " +
+                          (active.media.fit === "cover"
+                            ? "object-cover object-center"
+                            : "object-contain object-center") +
+                          (active.media.fit === "cover" ? "" : " p-8 md:p-10")
+                        }
+                        loading="lazy"
+                        decoding="async"
+                      />
+                    ) : (
+                      <motion.img
+                        key={active.media.src}
+                        src={active.media.src}
+                        alt={active.media.alt ?? ""}
+                        aria-hidden={active.media.alt ? undefined : "true"}
+                        initial={{ opacity: 0, scale: 0.98 }}
+                        animate={{ opacity: 1, scale: 1 }}
+                        transition={{ duration: 0.35, ease: "easeOut" }}
+                        className={
+                          "absolute inset-0 h-full w-full pointer-events-none " +
+                          (active.media.fit === "cover"
+                            ? "object-cover object-center"
+                            : "object-contain object-center") +
+                          (active.media.fit === "cover" ? "" : " p-8 md:p-10")
+                        }
+                        loading="lazy"
+                        decoding="async"
+                      />
+                    )
+                  ) : (
+                    <ActiveIcon
+                      className="h-28 w-28 md:h-36 md:w-36 opacity-25"
+                      aria-hidden="true"
+                    />
+                  )}
                 </div>
 
-                <p className="mt-8 text-sm md:text-base text-secondary-foreground leading-relaxed text-center">
+                <p
+                  className={
+                    "mt-8 text-sm md:text-base font-semibold leading-relaxed text-center " +
+                    descriptionToneClass
+                  }
+                >
                   {active.description}
                 </p>
               </div>

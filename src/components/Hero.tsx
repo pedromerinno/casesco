@@ -38,7 +38,7 @@ const Hero = () => {
           transition={{ duration: 0.8, delay: 0.15 }}
           className="text-4xl md:text-5xl lg:text-6xl font-display font-semibold leading-[1.05] mb-8 max-w-4xl"
         >
-          Agência full-service para marcas que precisam crescer com impacto.
+          Agência full-service para marcas que lideram a evolução do mercado.
         </motion.h1>
 
         <motion.p
