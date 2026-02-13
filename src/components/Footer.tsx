@@ -20,7 +20,8 @@ const Footer = () => {
     if (prefersReducedMotion) return;
 
     const ctx = gsap.context(() => {
-      const STRETCH_SCALE = 1.55;
+      // Keep a noticeable "stretch" without clipping.
+      const STRETCH_SCALE = 1.35;
 
       gsap.set(wordmarkEl, {
         scaleY: STRETCH_SCALE,
@@ -59,7 +60,7 @@ const Footer = () => {
       <div className="px-6 md:px-12 lg:px-20 py-16 md:py-20">
         <div className="mx-auto w-full max-w-screen-2xl">
           <div className="min-h-[28rem] md:min-h-[34rem] flex flex-col justify-between gap-10">
-            <div className="flex-1 flex items-center justify-center overflow-hidden">
+            <div className="flex-1 flex items-end justify-center overflow-hidden pt-10 md:pt-14 lg:pt-16 pb-6 md:pb-8">
               <h2
                 ref={wordmarkRef}
                 className="w-full font-body font-semibold leading-none tracking-[-0.12em] [font-kerning:none] text-primary-foreground text-center md:text-left"
