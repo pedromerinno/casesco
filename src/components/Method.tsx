@@ -215,7 +215,7 @@ const Method = () => {
               <CarouselItem
                 key={step.num}
                 aria-label={`${step.num} — ${step.title}`}
-                className="pl-4 w-full max-w-5xl basis-[96%] sm:basis-[86%] lg:basis-[72%]"
+                className="pl-4 w-full max-w-7xl basis-[98%] sm:basis-[92%] lg:basis-[84%]"
               >
                 <motion.div
                   initial={{ opacity: 0, y: 16 }}
@@ -223,19 +223,19 @@ const Method = () => {
                   viewport={{ once: true }}
                   transition={{ duration: 0.6, delay: i * 0.05 }}
                   className={cn(
-                    "h-full w-full min-h-[30rem] md:min-h-[36rem]",
+                    "h-full w-full min-h-[34rem] md:min-h-[42rem]",
                     "relative overflow-hidden rounded-3xl bg-gradient-to-br",
                     step.num === "01"
                       ? "from-card/80 via-card/60 to-accent/35"
                       : "from-card to-accent/40",
                     "ring-1 ring-border/70 shadow-sm",
-                    "p-14 md:p-16",
+                    "p-16 md:p-20",
                     "flex flex-col",
                   )}
                 >
                   {renderStepBackground(step.num)}
 
-                  <div className="relative z-10 inline-flex w-fit self-start items-center rounded-full bg-primary/10 text-primary font-body text-sm font-medium px-4 py-2">
+                  <div className="relative z-10 inline-flex w-fit self-start items-center rounded-full bg-primary/10 text-primary font-body text-base font-semibold px-5 py-2.5">
                     {step.num}
                   </div>
 
