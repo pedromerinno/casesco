@@ -1,7 +1,8 @@
 import Hero from "@/components/Hero";
+import FloatingNavbar from "@/components/FloatingNavbar";
 import ClientLogosMarquee from "@/components/ClientLogosMarquee";
-import Positioning from "@/components/Positioning";
 import Services from "@/components/Services";
+import Positioning from "@/components/Positioning";
 import Differentials from "@/components/Differentials";
 import Method from "@/components/Method";
 import Cases from "@/components/Cases";
@@ -12,10 +13,11 @@ import Footer from "@/components/Footer";
 const Index = () => {
   return (
     <main className="bg-background text-foreground">
+      <FloatingNavbar />
       <Hero />
       <ClientLogosMarquee />
-      <Positioning />
       <Services />
+      <Positioning />
       <Differentials />
       <Method />
       <Cases />

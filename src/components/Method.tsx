@@ -57,7 +57,7 @@ const Method = () => {
   }, [api, isPlaying, isHoverPaused, prefersReducedMotion]);
 
   return (
-    <section className="section-padding">
+    <section id="metodo" className="section-padding scroll-mt-24">
       <div className="max-w-6xl mx-auto">
         <motion.p
           initial={{ opacity: 0 }}
@@ -96,14 +96,14 @@ const Method = () => {
               <CarouselItem
                 key={step.num}
                 aria-label={`${step.num} — ${step.title}`}
-                className="pl-4 basis-[92%] sm:basis-[78%] lg:basis-[62%]"
+                className="pl-4 w-full max-w-4xl basis-[92%] sm:basis-[78%] lg:basis-[62%]"
               >
                 <motion.div
                   initial={{ opacity: 0, y: 16 }}
                   whileInView={{ opacity: 1, y: 0 }}
                   viewport={{ once: true }}
                   transition={{ duration: 0.6, delay: i * 0.05 }}
-                  className="h-full min-h-[26rem] md:min-h-[32rem] rounded-3xl bg-gradient-to-br from-card to-accent/40 ring-1 ring-border/70 shadow-sm p-12 md:p-14"
+                  className="h-full w-full min-h-[26rem] md:min-h-[32rem] rounded-3xl bg-gradient-to-br from-card to-accent/40 ring-1 ring-border/70 shadow-sm p-12 md:p-14"
                 >
                   <div className="inline-flex items-center rounded-full bg-primary/10 text-primary font-body text-sm font-medium px-4 py-2">
                     {step.num}

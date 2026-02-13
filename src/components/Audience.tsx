@@ -10,7 +10,7 @@ const audiences = [
 const Audience = () => {
   return (
     <section className="section-padding">
-      <div className="max-w-4xl mx-auto text-center">
+      <div className="max-w-7xl mx-auto text-center">
         <motion.h2
           initial={{ opacity: 0, y: 20 }}
           whileInView={{ opacity: 1, y: 0 }}
@@ -18,25 +18,44 @@ const Audience = () => {
           transition={{ duration: 0.7 }}
           className="text-3xl md:text-5xl font-display font-bold mb-12"
         >
-          Feita para empresas que precisam de comunicação{" "}
-          <span className="text-gradient">no nível certo.</span>
+          Feita para empresas que precisam de comunicação no nível certo.
         </motion.h2>
 
-        <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 text-left">
+        <ul className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6 md:gap-7 text-left">
           {audiences.map((item, i) => (
-            <motion.div
+            <motion.li
               key={item}
-              initial={{ opacity: 0, y: 15 }}
+              initial={{ opacity: 0, y: 14 }}
               whileInView={{ opacity: 1, y: 0 }}
               viewport={{ once: true }}
-              transition={{ duration: 0.5, delay: i * 0.08 }}
-              className="flex items-start gap-3 p-5 rounded-xl bg-card border border-border"
+              transition={{ duration: 0.5, delay: i * 0.06 }}
+              className={[
+                "group relative overflow-hidden rounded-3xl border border-border/70",
+                "bg-gradient-to-br from-card via-card to-accent/35",
+                "shadow-sm transition-all duration-300",
+                "hover:-translate-y-0.5 hover:shadow-lg hover:border-primary/20",
+                "focus-within:-translate-y-0.5 focus-within:shadow-lg focus-within:border-primary/20",
+                "aspect-square",
+              ].join(" ")}
             >
-              <span className="w-1.5 h-1.5 rounded-full bg-primary mt-2 flex-shrink-0" />
-              <span className="font-body text-secondary-foreground">{item}</span>
-            </motion.div>
+              {/* subtle shine */}
+              <div
+                aria-hidden="true"
+                className="pointer-events-none absolute inset-0 opacity-0 transition-opacity duration-300 bg-gradient-to-r from-primary/10 via-transparent to-transparent group-hover:opacity-100"
+              />
+
+              <div className="relative h-full p-8 md:p-10 flex flex-col justify-between">
+                <span className="inline-flex h-11 w-11 items-center justify-center rounded-2xl bg-primary/10 text-primary ring-1 ring-primary/15">
+                  <span className="h-2 w-2 rounded-full bg-primary" aria-hidden="true" />
+                </span>
+
+                <p className="mt-6 font-body text-base md:text-lg text-foreground/85 leading-relaxed">
+                  {item}
+                </p>
+              </div>
+            </motion.li>
           ))}
-        </div>
+        </ul>
       </div>
     </section>
   );

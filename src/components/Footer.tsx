@@ -1,23 +1,81 @@
+import { useLayoutEffect, useRef } from "react";
+import gsap from "gsap";
+import { ScrollTrigger } from "gsap/ScrollTrigger";
+
+gsap.registerPlugin(ScrollTrigger);
+
 const Footer = () => {
+  const footerRef = useRef<HTMLElement | null>(null);
+  const wordmarkRef = useRef<HTMLHeadingElement | null>(null);
+
+  useLayoutEffect(() => {
+    const footerEl = footerRef.current;
+    const wordmarkEl = wordmarkRef.current;
+    if (!footerEl || !wordmarkEl) return;
+
+    const prefersReducedMotion =
+      typeof window !== "undefined" &&
+      window.matchMedia?.("(prefers-reduced-motion: reduce)").matches;
+
+    if (prefersReducedMotion) return;
+
+    const ctx = gsap.context(() => {
+      gsap.set(wordmarkEl, {
+        scaleY: 1.55,
+        transformOrigin: "50% 100%",
+      });
+
+      gsap.to(wordmarkEl, {
+        scaleY: 1,
+        ease: "none",
+        scrollTrigger: {
+          trigger: footerEl,
+          start: "top bottom",
+          end: "bottom bottom",
+          scrub: true,
+        },
+      });
+    }, footerEl);
+
+    return () => ctx.revert();
+  }, []);
+
   return (
-    <footer className="px-6 md:px-12 lg:px-20 py-10 border-t border-border">
-      <div className="max-w-6xl mx-auto flex flex-col md:flex-row items-center justify-between gap-6">
-        <div className="text-center md:text-left">
-          <span className="font-display text-xl font-bold text-primary">ONMX</span>
-          <p className="text-sm text-muted-foreground mt-1">
-            Parte do ecossistema MERINNO Creative Group
-          </p>
-        </div>
+    <footer ref={footerRef} className="bg-primary text-primary-foreground">
+      <div className="px-6 md:px-12 lg:px-20 py-16 md:py-20">
+        <div className="mx-auto w-full max-w-screen-2xl">
+          <div className="min-h-[28rem] md:min-h-[34rem] flex flex-col justify-between gap-10">
+            <div className="flex-1 flex items-center justify-center overflow-hidden">
+              <h2
+                ref={wordmarkRef}
+                className="w-full font-body font-semibold leading-none tracking-[-0.12em] [font-kerning:none] text-primary-foreground text-center md:text-left"
+              >
+                <span className="block whitespace-nowrap text-[clamp(6.75rem,22vw,23.5rem)]">
+                  ONMX®
+                </span>
+              </h2>
+            </div>
 
-        <div className="flex items-center gap-6 text-sm text-muted-foreground">
-          <a href="#" className="hover:text-primary transition-colors">Instagram</a>
-          <a href="#" className="hover:text-primary transition-colors">Contato</a>
-          <a href="#" className="hover:text-primary transition-colors">Apresentação</a>
-        </div>
+            <div className="grid grid-cols-1 md:grid-cols-[1fr_auto_1fr] items-center gap-4">
+              <p className="text-xs text-primary-foreground/85 text-center md:text-left">
+                Part of MNNO® Group
+              </p>
 
-        <p className="text-xs text-muted-foreground">
-          © {new Date().getFullYear()} ONMX. Todos os direitos reservados.
-        </p>
+              <p className="text-xs text-primary-foreground/85 text-center">
+                © {new Date().getFullYear()} ONMX. Todos os direitos reservados.
+              </p>
+
+              <div className="flex justify-center md:justify-end">
+                <a
+                  href="#contato"
+                  className="inline-flex h-10 items-center justify-center rounded-full border border-primary-foreground/25 bg-primary-foreground/5 px-5 text-xs font-medium text-primary-foreground/95 backdrop-blur-sm transition-colors hover:bg-primary-foreground/10 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary-foreground/30 focus-visible:ring-offset-2 focus-visible:ring-offset-primary"
+                >
+                  Fale com nosso time
+                </a>
+              </div>
+            </div>
+          </div>
+        </div>
       </div>
     </footer>
   );

@@ -15,35 +15,53 @@ const Differentials = () => {
   const [activeIndex, setActiveIndex] = React.useState(0);
 
   React.useEffect(() => {
-    const elements = itemRefs.current.filter(Boolean) as HTMLDivElement[];
-    if (elements.length === 0) return;
+    let rafId = 0;
 
-    const observer = new IntersectionObserver(
-      (entries) => {
-        const visible = entries
-          .filter((e) => e.isIntersecting)
-          .map((e) => ({
-            index: Number((e.target as HTMLElement).dataset.index),
-            ratio: e.intersectionRatio,
-          }))
-          .sort((a, b) => b.ratio - a.ratio);
+    const updateActive = () => {
+      rafId = 0;
 
-        if (visible[0]?.index != null) setActiveIndex(visible[0].index);
-      },
-      {
-        // Central band to mimic “current” as you scroll
-        root: null,
-        rootMargin: "-40% 0px -40% 0px",
-        threshold: [0.1, 0.25, 0.5, 0.75, 1],
-      },
-    );
+      const viewportTopInset = 96; // accounts for the floating nav + breathing room
+      const viewportCenter = (viewportTopInset + window.innerHeight) / 2;
 
-    elements.forEach((el) => observer.observe(el));
-    return () => observer.disconnect();
+      let bestIndex = 0;
+      let bestDistance = Number.POSITIVE_INFINITY;
+
+      itemRefs.current.forEach((el, i) => {
+        if (!el) return;
+        const rect = el.getBoundingClientRect();
+
+        // Ignore elements fully outside viewport
+        if (rect.bottom < viewportTopInset || rect.top > window.innerHeight) return;
+
+        const center = rect.top + rect.height / 2;
+        const distance = Math.abs(center - viewportCenter);
+        if (distance < bestDistance) {
+          bestDistance = distance;
+          bestIndex = i;
+        }
+      });
+
+      setActiveIndex(bestIndex);
+    };
+
+    const onScrollOrResize = () => {
+      if (rafId) return;
+      rafId = window.requestAnimationFrame(updateActive);
+    };
+
+    updateActive();
+    window.addEventListener("scroll", onScrollOrResize, { passive: true });
+    window.addEventListener("resize", onScrollOrResize);
+
+    return () => {
+      if (rafId) window.cancelAnimationFrame(rafId);
+      window.removeEventListener("scroll", onScrollOrResize);
+      window.removeEventListener("resize", onScrollOrResize);
+    };
   }, []);
 
   return (
-    <section className="section-padding border-t border-border">
+    <section className="section-padding">
       <div className="max-w-6xl mx-auto grid md:grid-cols-2 gap-16 items-start">
         <div className="md:sticky md:top-24 self-start">
           <motion.p
@@ -75,7 +93,7 @@ const Differentials = () => {
           </motion.p>
         </div>
 
-        <div className="space-y-7">
+        <div className="space-y-8 md:space-y-10">
           {bullets.map((bullet, i) => {
             const Icon = bullet.icon;
             const isActive = i === activeIndex;
@@ -91,13 +109,42 @@ const Differentials = () => {
               whileInView={{ opacity: 1, x: 0 }}
               viewport={{ once: true }}
               transition={{ duration: 0.5, delay: i * 0.1 }}
-              animate={{ opacity: isActive ? 1 : 0.4 }}
-              className="group flex items-center gap-4 min-h-32 md:min-h-40 p-9 md:p-10 rounded-2xl bg-card border border-border transition-opacity hover:opacity-100"
+              animate={{ opacity: isActive ? 1 : 0.7 }}
+              className={[
+                "group relative overflow-hidden flex items-center gap-5 md:gap-6",
+                "min-h-36 md:min-h-44 px-8 md:px-10 py-8 md:py-10",
+                "rounded-3xl border transition-all duration-300",
+                "hover:-translate-y-0.5 hover:shadow-lg focus-within:shadow-lg",
+                isActive
+                  ? "bg-gradient-to-br from-card via-card to-accent/40 border-primary/25 shadow-xl shadow-primary/10 ring-1 ring-primary/15"
+                  : "bg-card/80 border-border/70 shadow-sm hover:border-primary/20 hover:bg-card",
+              ].join(" ")}
             >
-              <div className="inline-flex h-11 w-11 items-center justify-center rounded-xl bg-accent text-primary ring-1 ring-border/60 transition-colors group-hover:bg-primary/10 group-hover:ring-primary/20 flex-shrink-0">
-                <Icon className="h-5 w-5" aria-hidden="true" />
+              {/* Subtle shine */}
+              <div
+                aria-hidden="true"
+                className={[
+                  "pointer-events-none absolute inset-0 opacity-0 transition-opacity duration-300",
+                  "bg-gradient-to-r from-primary/10 via-transparent to-transparent",
+                  isActive ? "opacity-100" : "group-hover:opacity-100",
+                ].join(" ")}
+              />
+
+              <div
+                className={[
+                  "relative inline-flex h-11 w-11 md:h-12 md:w-12 items-center justify-center rounded-2xl",
+                  "text-primary ring-1 transition-colors flex-shrink-0",
+                  isActive
+                    ? "bg-primary/12 ring-primary/20"
+                    : "bg-accent ring-border/60 group-hover:bg-primary/10 group-hover:ring-primary/20",
+                ].join(" ")}
+              >
+                <Icon className="h-5 w-5 md:h-6 md:w-6" aria-hidden="true" />
               </div>
-              <span className="font-display font-medium text-foreground">{bullet.title}</span>
+
+              <span className="relative font-display font-semibold text-lg md:text-xl text-foreground leading-snug">
+                {bullet.title}
+              </span>
             </motion.div>
             );
           })}
