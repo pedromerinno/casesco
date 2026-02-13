@@ -47,7 +47,7 @@ export default function AdminLayout() {
       <div className="min-h-screen md:grid md:grid-cols-[280px_1fr]">
         <aside className="hidden md:flex flex-col border-r border-border bg-card/60 backdrop-blur">
           <div className="px-6 py-6">
-            <div className="font-display text-lg font-semibold">ONMX</div>
+            <div className="font-display text-lg font-semibold">ONMX®</div>
             <p className="mt-1 text-xs text-muted-foreground">Gerenciamento de conteúdo</p>
           </div>
 
@@ -82,7 +82,7 @@ export default function AdminLayout() {
           {/* Mobile header */}
           <div className="md:hidden border-b border-border bg-card/60 backdrop-blur">
             <div className="px-6 py-4 flex items-center justify-between">
-              <span className="font-display font-semibold">ONMX</span>
+              <span className="font-display font-semibold">ONMX®</span>
               <Button variant="outline" size="sm" onClick={signOut} className="gap-2">
                 <LogOut className="h-4 w-4" />
                 Sair

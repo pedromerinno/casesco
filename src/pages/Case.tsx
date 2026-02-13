@@ -157,7 +157,7 @@ export default function CasePage() {
       <header className="px-6 md:px-12 lg:px-20 py-6 border-b border-border/60">
         <div className="max-w-6xl mx-auto flex items-center justify-between gap-6">
           <Link to="/" className="font-display text-xl font-bold text-primary tracking-tight">
-            ONMX
+            ONMX®
           </Link>
           <Link
             to="/#cases"

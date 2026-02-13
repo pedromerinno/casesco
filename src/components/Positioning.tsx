@@ -322,7 +322,7 @@ const Positioning = () => {
                       className="absolute inset-0 flex items-center justify-center"
                     >
                       <h2 className={lineTextClass}>
-                        ONMX é onde campanhas viram movimento.
+                        ONMX® é onde campanhas viram movimento.
                       </h2>
                     </div>
 
@@ -348,7 +348,7 @@ const Positioning = () => {
                   {reduceMotion ? (
                     <div className="mt-6 space-y-2 md:space-y-3">
                       <p className="text-base md:text-lg text-white/85">
-                        ONMX é onde campanhas viram movimento.
+                        ONMX® é onde campanhas viram movimento.
                       </p>
                       <p className="text-base md:text-lg text-white/85">
                         Uma agência construída para operar no ritmo de empresas modernas

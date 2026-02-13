@@ -20,21 +20,35 @@ const Footer = () => {
     if (prefersReducedMotion) return;
 
     const ctx = gsap.context(() => {
+      const STRETCH_SCALE = 1.55;
+
       gsap.set(wordmarkEl, {
-        scaleY: 1.55,
+        scaleY: STRETCH_SCALE,
         transformOrigin: "50% 100%",
+        willChange: "transform",
       });
 
-      gsap.to(wordmarkEl, {
-        scaleY: 1,
-        ease: "none",
-        scrollTrigger: {
-          trigger: footerEl,
-          start: "top bottom",
-          end: "bottom bottom",
-          scrub: true,
-        },
+      const animateTo = (scaleY: number, duration: number) =>
+        gsap.to(wordmarkEl, {
+          scaleY,
+          duration,
+          ease: "power3.out",
+          overwrite: true,
+        });
+
+      const trigger = ScrollTrigger.create({
+        trigger: footerEl,
+        start: "top 85%",
+        end: "bottom 60%",
+        onEnter: () => animateTo(1, 1.05),
+        onEnterBack: () => animateTo(1, 0.9),
+        onLeaveBack: () => animateTo(STRETCH_SCALE, 0.75),
       });
+
+      return () => {
+        trigger.kill();
+        gsap.set(wordmarkEl, { willChange: "auto" });
+      };
     }, footerEl);
 
     return () => ctx.revert();
@@ -62,7 +76,7 @@ const Footer = () => {
               </p>
 
               <p className="text-xs text-primary-foreground/85 text-center">
-                © {new Date().getFullYear()} ONMX. Todos os direitos reservados.
+                © {new Date().getFullYear()} ONMX®. Todos os direitos reservados.
               </p>
 
               <div className="flex justify-center md:justify-end">

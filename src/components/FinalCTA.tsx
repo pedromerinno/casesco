@@ -25,7 +25,7 @@ const FinalCTA = () => {
                 transition={{ duration: 0.6, delay: 0.15 }}
                 className="text-lg text-secondary-foreground leading-relaxed mb-10 max-w-xl mx-auto"
               >
-                Marque uma conversa com a ONMX e saia com um plano claro,
+                Marque uma conversa com a ONMX® e saia com um plano claro,
                 priorizado e viável.
               </motion.p>
 

@@ -44,7 +44,7 @@ export default function FloatingNavbar() {
                 className="flex items-center gap-2 rounded-full px-2 py-1 font-display text-[15px] font-semibold tracking-tight text-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 focus-visible:ring-offset-background"
                 aria-label="Ir para o início"
               >
-                ONMX
+                ONMX®
               </a>
 
               <nav aria-label="Navegação principal" className="hidden md:block">
@@ -75,7 +75,7 @@ export default function FloatingNavbar() {
                   href="#contato"
                   className="inline-flex h-9 items-center justify-center rounded-full bg-primary px-4 text-sm font-semibold text-primary-foreground shadow-sm transition-colors hover:brightness-110 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 focus-visible:ring-offset-background"
                 >
-                  Falar com a ONMX
+                  Falar com a ONMX®
                 </a>
               </div>
             </div>
@@ -96,7 +96,7 @@ export default function FloatingNavbar() {
                 className="flex items-center gap-2 rounded-full px-2 py-1 font-display text-[15px] font-semibold tracking-tight text-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 focus-visible:ring-offset-background"
                 aria-label="Ir para o início"
               >
-                ONMX
+                ONMX®
               </a>
 
               <nav aria-label="Navegação principal" className="hidden md:block">
@@ -127,7 +127,7 @@ export default function FloatingNavbar() {
                   href="#contato"
                   className="inline-flex h-9 items-center justify-center rounded-full bg-primary px-4 text-sm font-semibold text-primary-foreground shadow-sm transition-colors hover:brightness-110 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 focus-visible:ring-offset-background"
                 >
-                  Falar com a ONMX
+                  Falar com a ONMX®
                 </a>
               </div>
             </div>

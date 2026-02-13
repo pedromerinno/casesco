@@ -1,6 +1,6 @@
-# ONMX — Site
+# ONMX® — Site
 
-Landing page da ONMX, construída com Vite + React + TypeScript + Tailwind (shadcn/ui).
+Landing page da ONMX®, construída com Vite + React + TypeScript + Tailwind (shadcn/ui).
 
 ## Supabase (MNNO)
 

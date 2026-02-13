@@ -88,7 +88,7 @@ const Differentials = () => {
             transition={{ duration: 0.6, delay: 0.15 }}
             className="text-secondary-foreground leading-relaxed"
           >
-            Na ONMX, estratégia e execução acontecem dentro do mesmo ecossistema.
+            Na ONMX®, estratégia e execução acontecem dentro do mesmo ecossistema.
             Isso significa menos retrabalho, mais velocidade e entregas com padrão global.
           </motion.p>
         </div>
