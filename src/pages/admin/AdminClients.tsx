@@ -3,7 +3,7 @@ import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { Pencil, Plus, Trash2 } from "lucide-react";
 
 import { supabase } from "@/lib/supabase/client";
-import { getPrimaryCompany } from "@/lib/onmx/company";
+import { useCompany } from "@/lib/company-context";
 import { toSlug } from "@/lib/onmx/slug";
 import { sanitizeSvgToCurrentColor } from "@/lib/onmx/svg";
 import { Button } from "@/components/ui/button";
@@ -22,10 +22,11 @@ type ClientRow = {
   created_at: string | null;
 };
 
-async function getClients(): Promise<ClientRow[]> {
+async function getClientsByGroup(groupId: string): Promise<ClientRow[]> {
   const { data, error } = await supabase
     .from("clients")
     .select("id,name,slug,industry,website_url,logo_url,logo_svg,created_at")
+    .eq("group_id", groupId)
     .order("created_at", { ascending: false });
   if (error) throw error;
   return (data as ClientRow[]) ?? [];
@@ -34,16 +35,11 @@ async function getClients(): Promise<ClientRow[]> {
 export default function AdminClients() {
   const { toast } = useToast();
   const qc = useQueryClient();
-
-  const { data: company } = useQuery({
-    queryKey: ["admin", "company"],
-    queryFn: getPrimaryCompany,
-    staleTime: 10 * 60 * 1000,
-  });
+  const { company } = useCompany();
 
   const { data, isLoading } = useQuery({
-    queryKey: ["admin", "clients"],
-    queryFn: getClients,
+    queryKey: ["admin", "clients", company.id],
+    queryFn: () => getClientsByGroup(company.group_id),
     staleTime: 60 * 1000,
   });
 
@@ -76,7 +72,6 @@ export default function AdminClients() {
 
   const upsert = useMutation({
     mutationFn: async () => {
-      if (!company) throw new Error("Empresa não encontrada.");
       const payload = {
         id: editing?.id,
         group_id: company.group_id,

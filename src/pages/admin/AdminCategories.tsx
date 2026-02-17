@@ -3,7 +3,7 @@ import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { Pencil, Plus, Trash2 } from "lucide-react";
 
 import { supabase } from "@/lib/supabase/client";
-import { getPrimaryCompany } from "@/lib/onmx/company";
+import { useCompany } from "@/lib/company-context";
 import { toSlug } from "@/lib/onmx/slug";
 import { Button } from "@/components/ui/button";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
@@ -37,17 +37,11 @@ async function getCompanyCategories(companyId: string): Promise<CategoryRow[]> {
 export default function AdminCategories() {
   const { toast } = useToast();
   const qc = useQueryClient();
-
-  const { data: company } = useQuery({
-    queryKey: ["admin", "company"],
-    queryFn: getPrimaryCompany,
-    staleTime: 10 * 60 * 1000,
-  });
+  const { company } = useCompany();
 
   const { data, isLoading } = useQuery({
-    queryKey: ["admin", "categories", company?.id],
-    queryFn: () => getCompanyCategories(company!.id),
-    enabled: !!company?.id,
+    queryKey: ["admin", "categories", company.id],
+    queryFn: () => getCompanyCategories(company.id),
     staleTime: 60 * 1000,
   });
 
@@ -62,7 +56,6 @@ export default function AdminCategories() {
 
   const upsert = useMutation({
     mutationFn: async () => {
-      if (!company) throw new Error("Empresa não encontrada.");
       const payload = {
         id: editing?.id,
         group_id: company.group_id,

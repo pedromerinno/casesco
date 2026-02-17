@@ -115,10 +115,6 @@
 }
 
 @layer utilities {
-  .text-gradient {
-    @apply bg-clip-text text-transparent bg-gradient-to-r from-primary via-primary/60 to-primary;
-  }
-
   .marquee {
     animation: marquee var(--marquee-duration, 45s) linear infinite;
   }
@@ -135,14 +131,65 @@
     @apply py-24 md:py-32 px-6 md:px-12 lg:px-20;
   }
 
-  .animate-fade-up {
-    animation: fadeUp 0.8s ease-out forwards;
-    opacity: 0;
+  /* Responsive % width for media blocks (image/video). */
+  .onmx-media-width {
+    width: calc(var(--onmx-media-w-mobile, 100) * 1%);
   }
 
-  .animate-fade-in {
-    animation: fadeIn 0.6s ease-out forwards;
-    opacity: 0;
+  @media (min-width: 768px) {
+    .onmx-media-width {
+      width: calc(var(--onmx-media-w-desktop, 100) * 1%);
+    }
+  }
+
+  /* Mux Player: hard-hide controls even on hover */
+  .mux-no-controls mux-player {
+    --controls: none !important;
+    --top-controls: none !important;
+    --center-controls: none !important;
+    --bottom-controls: none !important;
+    cursor: default !important;
+  }
+
+  .mux-no-controls mux-player::part(top),
+  .mux-no-controls mux-player::part(center),
+  .mux-no-controls mux-player::part(bottom) {
+    display: none !important;
+  }
+
+  /* Extra safety: hide only the gesture overlay (keeps media layer intact) */
+  .mux-no-controls mux-player::part(gesture-layer) {
+    display: none !important;
+  }
+
+  /* Container: no extra space between items (e.g. two videos in a column) */
+  .public-container-block video,
+  .public-container-block mux-player {
+    margin: 0 !important;
+    display: block;
+  }
+
+  .public-container-block .flex.flex-col {
+    gap: 0 !important;
+  }
+
+  /* Remove any vertical gap from aspect-ratio or inline spacing */
+  .public-container-block [class*="aspect-"] {
+    margin: 0 !important;
+    vertical-align: top;
+  }
+
+  /* Builder preview: remove padding from block content so items sit flush (except video: keep padding) */
+  .builder-preview .block-content-padding:not(.block-content-padding-keep) {
+    padding: 0 !important;
+  }
+
+  /* Video/Mux: no extra space below (inline gap) */
+  .builder-preview mux-player,
+  .builder-preview video {
+    display: block !important;
+    vertical-align: top;
+    margin: 0 !important;
   }
 }
 
@@ -173,18 +220,3 @@
   }
 }
 
-@keyframes fadeUp {
-  from {
-    opacity: 0;
-    transform: translateY(30px);
-  }
-  to {
-    opacity: 1;
-    transform: translateY(0);
-  }
-}
-
-@keyframes fadeIn {
-  from { opacity: 0; }
-  to { opacity: 1; }
-}

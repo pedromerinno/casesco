@@ -3,7 +3,7 @@ import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { UploadCloud } from "lucide-react";
 
 import { supabase } from "@/lib/supabase/client";
-import { getPrimaryCompany } from "@/lib/onmx/company";
+import { useCompany, type Company } from "@/lib/company-context";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { useToast } from "@/hooks/use-toast";
@@ -33,13 +33,11 @@ function looksLikeMissingColumnError(err: any) {
   return err?.code === "42703" || String(err?.message ?? "").toLowerCase().includes("column");
 }
 
-async function getPositioningSettings(): Promise<PositioningSettingsRow | null> {
-  const company = await getPrimaryCompany();
-
+async function getPositioningSettings(companyId: string): Promise<PositioningSettingsRow | null> {
   const { data, error } = await supabase
     .from("companies")
     .select("id,positioning_media_type,positioning_media_url,positioning_media_poster_url")
-    .eq("id", company.id)
+    .eq("id", companyId)
     .single();
 
   if (error) {
@@ -68,16 +66,85 @@ async function uploadToCaseCoversBucket(companyId: string, file: File, folder: s
 export default function AdminSite() {
   const { toast } = useToast();
   const qc = useQueryClient();
+  const { company, updateCompany } = useCompany();
 
-  const { data: company, isLoading: companyLoading } = useQuery({
-    queryKey: ["admin", "company"],
-    queryFn: getPrimaryCompany,
-    staleTime: 10 * 60 * 1000,
+  /* ── Branding ── */
+  const brandingQuery = useQuery({
+    queryKey: ["admin", "site", "branding", company.id],
+    queryFn: async () => {
+      const { data, error } = await supabase
+        .from("companies")
+        .select("id,name,logo_url,brand_color")
+        .eq("id", company.id)
+        .single();
+      if (error) {
+        if (looksLikeMissingColumnError(error)) return null;
+        throw error;
+      }
+      return data as { id: string; name: string; logo_url: string | null; brand_color: string | null };
+    },
+    staleTime: 30 * 1000,
   });
 
+  const [brandName, setBrandName] = React.useState("");
+  const [logoUrl, setLogoUrl] = React.useState("");
+  const [brandColor, setBrandColor] = React.useState("#9D00F2");
+  const [logoUploading, setLogoUploading] = React.useState(false);
+
+  React.useEffect(() => {
+    const b = brandingQuery.data;
+    if (!b) return;
+    setBrandName(b.name ?? "");
+    setLogoUrl(b.logo_url ?? "");
+    setBrandColor(b.brand_color ?? "#9D00F2");
+  }, [brandingQuery.data]);
+
+  const saveBranding = useMutation({
+    mutationFn: async () => {
+      const payload = {
+        name: brandName.trim() || company.name,
+        logo_url: logoUrl.trim() || null,
+        brand_color: brandColor.trim() || null,
+      };
+      const { error } = await supabase.from("companies").update(payload).eq("id", company.id);
+      if (error) throw error;
+      updateCompany(payload as Partial<Company>);
+    },
+    onSuccess: async () => {
+      await qc.invalidateQueries({ queryKey: ["admin", "site", "branding"] });
+      toast({ title: "Salvo", description: "Identidade visual atualizada." });
+    },
+    onError: (err: any) => {
+      toast({
+        title: "Erro",
+        description: err?.message ?? "Não foi possível salvar.",
+        variant: "destructive",
+      });
+    },
+  });
+
+  async function onUploadLogo(file: File) {
+    if (!company.id) return;
+    setLogoUploading(true);
+    try {
+      const nextUrl = await uploadToCaseCoversBucket(company.id, file, "logo");
+      setLogoUrl(nextUrl);
+      toast({ title: "Upload concluído", description: "Logo enviado com sucesso." });
+    } catch (err: any) {
+      toast({
+        title: "Upload falhou",
+        description: err?.message ?? "Não foi possível enviar o arquivo.",
+        variant: "destructive",
+      });
+    } finally {
+      setLogoUploading(false);
+    }
+  }
+
+  /* ── Positioning ── */
   const settingsQuery = useQuery({
-    queryKey: ["admin", "site", "positioning-media"],
-    queryFn: getPositioningSettings,
+    queryKey: ["admin", "site", "positioning-media", company.id],
+    queryFn: () => getPositioningSettings(company.id),
     staleTime: 30 * 1000,
   });
 
@@ -97,7 +164,6 @@ export default function AdminSite() {
 
   const save = useMutation({
     mutationFn: async () => {
-      if (!company?.id) throw new Error("Empresa não encontrada.");
 
       const payload = {
         positioning_media_type: type,
@@ -129,7 +195,7 @@ export default function AdminSite() {
   });
 
   async function onUploadMedia(file: File) {
-    if (!company?.id) return;
+    if (!company.id) return;
     setUploading(true);
     try {
       const nextUrl = await uploadToCaseCoversBucket(
@@ -151,7 +217,7 @@ export default function AdminSite() {
   }
 
   async function onUploadPoster(file: File) {
-    if (!company?.id) return;
+    if (!company.id) return;
     setPosterUploading(true);
     try {
       const nextUrl = await uploadToCaseCoversBucket(company.id, file, "positioning-poster");
@@ -177,12 +243,113 @@ export default function AdminSite() {
   return (
     <section className="space-y-6">
       <div>
-        <h1 className="font-display text-2xl font-semibold">Site</h1>
+        <h1 className="font-display text-2xl font-semibold">Configurações</h1>
         <p className="mt-1 text-sm text-muted-foreground">
-          Configurações visuais do site (single-company).
+          Configurações do site e preferências gerais.
         </p>
       </div>
 
+      {/* ── Identidade visual ── */}
+      <div className="rounded-2xl border border-border bg-card p-6 md:p-7">
+        <div>
+          <div className="font-medium">Identidade visual</div>
+          <p className="mt-1 text-sm text-muted-foreground">
+            Nome, logo e cor primária da empresa.
+          </p>
+        </div>
+
+        <div className="mt-6 grid grid-cols-1 lg:grid-cols-2 gap-6">
+          <div className="space-y-4">
+            <div className="space-y-2">
+              <div className="text-sm font-medium">Nome da empresa</div>
+              <Input
+                value={brandName}
+                onChange={(e) => setBrandName(e.target.value)}
+                placeholder="Nome da empresa"
+              />
+            </div>
+
+            <div className="space-y-2">
+              <div className="text-sm font-medium">Logo</div>
+              <div className="flex flex-col md:flex-row md:items-center gap-3">
+                <Input
+                  type="file"
+                  accept="image/png,image/jpeg,image/webp,image/svg+xml"
+                  disabled={logoUploading || !company.id}
+                  onChange={async (e) => {
+                    const input = e.currentTarget;
+                    const file = input.files?.[0];
+                    if (!file) return;
+                    input.value = "";
+                    await onUploadLogo(file);
+                  }}
+                />
+                <div className="text-xs text-muted-foreground md:w-[180px]">
+                  {logoUploading ? "Enviando…" : "Upload automático"}
+                </div>
+              </div>
+              <Input
+                value={logoUrl}
+                onChange={(e) => setLogoUrl(e.target.value)}
+                placeholder="https://… logo.png"
+              />
+            </div>
+
+            <div className="space-y-2">
+              <div className="text-sm font-medium">Cor primária</div>
+              <div className="flex items-center gap-3">
+                <input
+                  type="color"
+                  value={brandColor}
+                  onChange={(e) => setBrandColor(e.target.value)}
+                  className="h-10 w-12 cursor-pointer rounded-lg border border-border bg-transparent p-1"
+                />
+                <Input
+                  value={brandColor}
+                  onChange={(e) => setBrandColor(e.target.value)}
+                  placeholder="#9D00F2"
+                  className="flex-1"
+                />
+              </div>
+            </div>
+
+            <div className="flex items-center justify-end gap-3 pt-2">
+              <Button onClick={() => saveBranding.mutate()} disabled={saveBranding.isPending}>
+                {saveBranding.isPending ? "Salvando…" : "Salvar"}
+              </Button>
+            </div>
+          </div>
+
+          <div className="space-y-3">
+            <div className="text-sm font-medium">Preview</div>
+            <div className="rounded-2xl border border-border overflow-hidden bg-muted p-6 space-y-4">
+              {logoUrl ? (
+                <img src={logoUrl} alt="Logo" className="h-10 object-contain" />
+              ) : (
+                <div className="h-10 w-10 rounded-lg bg-black/10 grid place-items-center text-xs text-muted-foreground">
+                  Logo
+                </div>
+              )}
+              <div className="flex items-center gap-3">
+                <div
+                  className="h-8 w-8 rounded-full shrink-0"
+                  style={{ backgroundColor: brandColor }}
+                />
+                <span className="text-sm font-medium">{brandName || "Empresa"}</span>
+              </div>
+              <button
+                type="button"
+                className="px-4 py-2 rounded-full text-white text-sm font-medium"
+                style={{ backgroundColor: brandColor }}
+              >
+                Botão de exemplo
+              </button>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      {/* ── Positioning ── */}
       <div className="rounded-2xl border border-border bg-card p-6 md:p-7">
         <div className="flex flex-col md:flex-row md:items-start md:justify-between gap-4">
           <div>
@@ -238,7 +405,7 @@ export default function AdminSite() {
                 <Input
                   type="file"
                   accept={acceptMedia}
-                  disabled={uploading || companyLoading || !company?.id}
+                  disabled={uploading || !company.id}
                   onChange={async (e) => {
                     const input = e.currentTarget;
                     const file = input.files?.[0];
@@ -272,7 +439,7 @@ export default function AdminSite() {
                   <Input
                     type="file"
                     accept="image/png,image/jpeg,image/webp"
-                    disabled={posterUploading || companyLoading || !company?.id}
+                    disabled={posterUploading || !company.id}
                     onChange={async (e) => {
                       const input = e.currentTarget;
                       const file = input.files?.[0];

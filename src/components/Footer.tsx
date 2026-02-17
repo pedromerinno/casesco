@@ -1,65 +1,11 @@
-import { useLayoutEffect, useRef } from "react";
-import gsap from "gsap";
-import { ScrollTrigger } from "gsap/ScrollTrigger";
-
-gsap.registerPlugin(ScrollTrigger);
-
 const Footer = () => {
-  const footerRef = useRef<HTMLElement | null>(null);
-  const wordmarkRef = useRef<HTMLHeadingElement | null>(null);
-
-  useLayoutEffect(() => {
-    const footerEl = footerRef.current;
-    const wordmarkEl = wordmarkRef.current;
-    if (!footerEl || !wordmarkEl) return;
-
-    const prefersReducedMotion =
-      typeof window !== "undefined" &&
-      window.matchMedia?.("(prefers-reduced-motion: reduce)").matches;
-
-    if (prefersReducedMotion) return;
-
-    const ctx = gsap.context(() => {
-      // Keep a noticeable "stretch" without clipping.
-      const STRETCH_SCALE = 1.42;
-
-      gsap.set(wordmarkEl, {
-        scaleY: STRETCH_SCALE,
-        transformOrigin: "50% 100%",
-        willChange: "transform",
-      });
-
-      const tween = gsap.to(wordmarkEl, {
-        scaleY: 1,
-        ease: "none",
-        scrollTrigger: {
-          trigger: footerEl,
-          // Tie to scroll so it feels consistent at the page end.
-          start: "top bottom",
-          end: "top 60%",
-          scrub: 0.8,
-          invalidateOnRefresh: true,
-        },
-      });
-
-      return () => {
-        tween.scrollTrigger?.kill();
-        tween.kill();
-        gsap.set(wordmarkEl, { willChange: "auto" });
-      };
-    }, footerEl);
-
-    return () => ctx.revert();
-  }, []);
-
   return (
-    <footer ref={footerRef} className="bg-primary text-primary-foreground">
+    <footer className="bg-primary text-primary-foreground">
       <div className="px-6 md:px-12 lg:px-20 py-16 md:py-20">
         <div className="mx-auto w-full max-w-screen-2xl">
           <div className="min-h-[28rem] md:min-h-[34rem] flex flex-col justify-between gap-10">
             <div className="flex-1 flex items-end justify-center overflow-hidden pt-10 md:pt-14 lg:pt-16 pb-6 md:pb-8">
               <h2
-                ref={wordmarkRef}
                 className="w-full font-body font-semibold leading-none tracking-[-0.12em] [font-kerning:none] text-primary-foreground text-center md:text-left"
               >
                 <span className="block whitespace-nowrap text-[clamp(6.75rem,22vw,23.5rem)]">

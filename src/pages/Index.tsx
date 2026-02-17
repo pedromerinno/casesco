@@ -1,31 +1,101 @@
-import Hero from "@/components/Hero";
-import FloatingNavbar from "@/components/FloatingNavbar";
-import ClientLogosMarquee from "@/components/ClientLogosMarquee";
-import Services from "@/components/Services";
-import Positioning from "@/components/Positioning";
-import Differentials from "@/components/Differentials";
-import Method from "@/components/Method";
-import Cases from "@/components/Cases";
-import Audience from "@/components/Audience";
-import FinalCTA from "@/components/FinalCTA";
-import Footer from "@/components/Footer";
+import * as React from "react";
+import { useNavigate } from "react-router-dom";
 
-const Index = () => {
+import { supabase } from "@/lib/supabase/client";
+import { getUserAccessInfo } from "@/lib/supabase/admin";
+import { Button } from "@/components/ui/button";
+import { Input } from "@/components/ui/input";
+import { useToast } from "@/hooks/use-toast";
+
+export default function Index() {
+  const navigate = useNavigate();
+  const { toast } = useToast();
+
+  const [email, setEmail] = React.useState("");
+  const [password, setPassword] = React.useState("");
+  const [loading, setLoading] = React.useState(false);
+
+  React.useEffect(() => {
+    (async () => {
+      const info = await getUserAccessInfo();
+      if (info) navigate("/admin", { replace: true });
+    })();
+  }, [navigate]);
+
+  async function onSubmit(e: React.FormEvent) {
+    e.preventDefault();
+    setLoading(true);
+
+    try {
+      const { error } = await supabase.auth.signInWithPassword({ email, password });
+      if (error) throw error;
+
+      const info = await getUserAccessInfo();
+      if (!info) {
+        await supabase.auth.signOut();
+        toast({
+          title: "Acesso negado",
+          description: "Seu usuário não tem acesso a nenhuma empresa.",
+          variant: "destructive",
+        });
+        return;
+      }
+
+      navigate("/admin", { replace: true });
+    } catch (err: any) {
+      toast({
+        title: "Não foi possível entrar",
+        description: err?.message ?? "Tente novamente.",
+        variant: "destructive",
+      });
+    } finally {
+      setLoading(false);
+    }
+  }
+
   return (
-    <main className="bg-background text-foreground">
-      <FloatingNavbar />
-      <Hero />
-      <ClientLogosMarquee />
-      <Services />
-      <Positioning />
-      <Differentials />
-      <Method />
-      <Cases />
-      <Audience />
-      <FinalCTA />
-      <Footer />
+    <main className="min-h-screen bg-background text-foreground flex items-center justify-center px-6 py-16">
+      <div className="w-full max-w-md rounded-2xl border border-border bg-card p-8">
+        <h1 className="font-display text-2xl font-semibold">ONMX®</h1>
+        <p className="mt-2 text-sm text-muted-foreground">
+          Entre com suas credenciais para acessar a plataforma.
+        </p>
+
+        <form onSubmit={onSubmit} className="mt-8 space-y-4">
+          <div className="space-y-2">
+            <label className="text-sm font-medium" htmlFor="email">
+              E-mail
+            </label>
+            <Input
+              id="email"
+              type="email"
+              autoComplete="email"
+              value={email}
+              onChange={(e) => setEmail(e.target.value)}
+              placeholder="voce@empresa.com"
+              required
+            />
+          </div>
+
+          <div className="space-y-2">
+            <label className="text-sm font-medium" htmlFor="password">
+              Senha
+            </label>
+            <Input
+              id="password"
+              type="password"
+              autoComplete="current-password"
+              value={password}
+              onChange={(e) => setPassword(e.target.value)}
+              required
+            />
+          </div>
+
+          <Button type="submit" className="w-full" disabled={loading}>
+            {loading ? "Entrando…" : "Entrar"}
+          </Button>
+        </form>
+      </div>
     </main>
   );
-};
-
-export default Index;
+}

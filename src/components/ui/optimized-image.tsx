@@ -62,7 +62,6 @@ export const OptimizedImage = React.forwardRef<
       sizes={finalSrcSet ? sizes : undefined}
       loading={priority ? "eager" : "lazy"}
       decoding={priority ? "sync" : "async"}
-      fetchPriority={priority ? "high" : undefined}
       onError={onError}
       {...rest}
     />
