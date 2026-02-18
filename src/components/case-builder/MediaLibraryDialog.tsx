@@ -119,57 +119,73 @@ export default function MediaLibraryDialog({
     );
   }
 
-  async function handleUpload(file: File) {
+  async function uploadOneFile(file: File): Promise<boolean> {
     if (file.type.startsWith("video/")) {
-      // Video upload via Mux
-      setUploading(true);
-      setUploadProgress(0);
-      try {
-        const { uploadUrl, mediaId } = await createMuxUpload(company.id, file);
+      const { uploadUrl, mediaId } = await createMuxUpload(company.id, file);
 
-        await new Promise<void>((resolve, reject) => {
-          const upload = UpChunk.createUpload({
-            endpoint: uploadUrl,
-            file,
-            chunkSize: 5120, // 5MB chunks
-          });
-
-          upload.on("progress", (progress: { detail: number }) => {
-            setUploadProgress(Math.round(progress.detail));
-          });
-
-          upload.on("success", () => {
-            resolve();
-          });
-
-          upload.on("error", (err: { detail: { message: string } }) => {
-            reject(new Error(err.detail.message));
-          });
+      await new Promise<void>((resolve, reject) => {
+        const upload = UpChunk.createUpload({
+          endpoint: uploadUrl,
+          file,
+          chunkSize: 5120,
         });
 
-        // Try to sync immediately (covers webhook misfires / timing issues)
-        await syncMuxMedia(mediaId);
-        queryClient.invalidateQueries({ queryKey: ["media-library"] });
-        toast.success("Upload concluído. O vídeo está sendo processado.");
-      } catch (err: any) {
-        toast.error(err?.message ?? "Não foi possível enviar o vídeo.");
-      } finally {
-        setUploading(false);
-        setUploadProgress(0);
-      }
-    } else {
-      // Image upload via Supabase Storage (unchanged)
-      setUploading(true);
+        upload.on("progress", (progress: { detail: number }) => {
+          setUploadProgress(Math.round(progress.detail));
+        });
+
+        upload.on("success", () => resolve());
+        upload.on("error", (err: { detail: { message: string } }) => {
+          reject(new Error(err.detail.message));
+        });
+      });
+
+      await syncMuxMedia(mediaId);
+      return true;
+    }
+
+    await uploadToMediaLibrary(company.id, file);
+    return true;
+  }
+
+  async function handleUpload(files: File | FileList) {
+    const list = Array.from(files instanceof FileList ? files : [files]);
+    if (list.length === 0) return;
+
+    setUploading(true);
+    setUploadProgress(0);
+
+    let ok = 0;
+    let failed = 0;
+
+    for (const file of list) {
       try {
-        await uploadToMediaLibrary(company.id, file);
-        queryClient.invalidateQueries({ queryKey: ["media-library"] });
-        toast.success("Upload concluído.");
+        await uploadOneFile(file);
+        ok += 1;
       } catch (err: any) {
-        toast.error(err?.message ?? "Não foi possível enviar o arquivo.");
-      } finally {
-        setUploading(false);
+        failed += 1;
+        toast.error(`${file.name}: ${err?.message ?? "Falha no envio."}`);
       }
     }
+
+    queryClient.invalidateQueries({ queryKey: ["media-library"] });
+
+    if (ok > 0) {
+      const hasVideo = list.some((f) => f.type.startsWith("video/"));
+      if (list.length === 1) {
+        toast.success(
+          hasVideo
+            ? "Upload concluído. O vídeo está sendo processado."
+            : "Upload concluído.",
+        );
+      } else {
+        toast.success(
+          `${ok} arquivo(s) enviado(s)${failed > 0 ? `. ${failed} falha(s).` : "."}`,
+        );
+      }
+    }
+    setUploading(false);
+    setUploadProgress(0);
   }
 
   async function handleDelete(e: React.MouseEvent, item: MediaItem) {
@@ -205,7 +221,7 @@ export default function MediaLibraryDialog({
         <DialogHeader>
           <DialogTitle>Biblioteca de mídia</DialogTitle>
           <DialogDescription>
-            Selecione um arquivo existente ou faça upload de um novo.
+            Selecione um arquivo existente ou faça upload de um ou mais arquivos.
           </DialogDescription>
         </DialogHeader>
 
@@ -228,10 +244,11 @@ export default function MediaLibraryDialog({
             ref={fileInputRef}
             type="file"
             accept={fileAccept}
+            multiple
             className="hidden"
             onChange={(e) => {
-              const file = e.target.files?.[0];
-              if (file) handleUpload(file);
+              const files = e.target.files;
+              if (files?.length) handleUpload(files);
               e.target.value = "";
             }}
           />
