@@ -15,6 +15,7 @@ import CaseBuilder from "./pages/admin/CaseBuilder";
 import CasePreview from "./pages/admin/CasePreview";
 import AdminSite from "./pages/admin/AdminSite";
 import AdminPerfil from "./pages/admin/AdminPerfil";
+import AdminUsuarios from "./pages/admin/AdminUsuarios";
 
 const queryClient = new QueryClient();
 
@@ -37,6 +38,7 @@ const App = () => (
             <Route path="cases" element={<AdminCases />} />
             <Route path="categorias" element={<AdminCategories />} />
             <Route path="perfil" element={<AdminPerfil />} />
+            <Route path="usuarios" element={<AdminUsuarios />} />
             <Route path="configuracoes" element={<AdminSite />} />
             <Route path="site" element={<Navigate to="/admin/configuracoes" replace />} />
           </Route>

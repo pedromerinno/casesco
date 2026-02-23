@@ -6,6 +6,7 @@ import {
   Layers3,
   Settings2,
   Tags,
+  UserCog,
   Users,
 } from "lucide-react";
 
@@ -17,7 +18,7 @@ type NavItem = {
   icon: React.ComponentType<{ className?: string }>;
 };
 
-const areas: NavItem[] = [
+const baseAreas: NavItem[] = [
   { to: "/admin", label: "Dash", icon: LayoutDashboard },
   { to: "/admin/clientes", label: "Clientes", icon: Users },
   { to: "/admin/cases", label: "Cases", icon: Layers3 },
@@ -25,7 +26,18 @@ const areas: NavItem[] = [
   { to: "/admin/configuracoes", label: "Configurações", icon: Settings2 },
 ];
 
-export default function AdminSidebar() {
+export default function AdminSidebar({ isSuperAdmin = false }: { isSuperAdmin?: boolean }) {
+  const areas = React.useMemo(
+    () =>
+      isSuperAdmin
+        ? [
+            ...baseAreas.slice(0, 4),
+            { to: "/admin/usuarios", label: "Usuários", icon: UserCog as React.ComponentType<{ className?: string }> },
+            ...baseAreas.slice(4),
+          ]
+        : baseAreas,
+    [isSuperAdmin]
+  );
   const [collapsed, setCollapsed] = React.useState(false);
 
   return (

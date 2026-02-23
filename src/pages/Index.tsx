@@ -56,7 +56,7 @@ export default function Index() {
   return (
     <main className="min-h-screen bg-background text-foreground flex items-center justify-center px-6 py-16">
       <div className="w-full max-w-md rounded-2xl border border-border bg-card p-8">
-        <h1 className="font-display text-2xl font-semibold">ONMX®</h1>
+        <h1 className="font-display text-2xl font-semibold">MNNO®</h1>
         <p className="mt-2 text-sm text-muted-foreground">
           Entre com suas credenciais para acessar a plataforma.
         </p>
@@ -91,7 +91,11 @@ export default function Index() {
             />
           </div>
 
-          <Button type="submit" className="w-full" disabled={loading}>
+          <Button
+            type="submit"
+            className="w-full bg-[#c4b896] text-[#2c2420] hover:bg-[#b8a88a] focus-visible:ring-[#c4b896]"
+            disabled={loading}
+          >
             {loading ? "Entrando…" : "Entrar"}
           </Button>
         </form>

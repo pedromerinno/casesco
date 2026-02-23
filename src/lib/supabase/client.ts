@@ -13,8 +13,8 @@ function requireEnv(name: string, value: unknown): string {
   return "";
 }
 
-const supabaseUrl = requireEnv("VITE_SUPABASE_URL", import.meta.env.VITE_SUPABASE_URL);
-const supabaseAnonKey = requireEnv("VITE_SUPABASE_ANON_KEY", import.meta.env.VITE_SUPABASE_ANON_KEY);
+export const supabaseUrl = requireEnv("VITE_SUPABASE_URL", import.meta.env.VITE_SUPABASE_URL);
+export const supabaseAnonKey = requireEnv("VITE_SUPABASE_ANON_KEY", import.meta.env.VITE_SUPABASE_ANON_KEY);
 
 export const supabase = createClient(supabaseUrl, supabaseAnonKey, {
   auth: {

@@ -59,7 +59,7 @@ export default function AdminLayout() {
         ) : (
           <div className="w-full px-2">
             <div className="flex gap-2">
-              <AdminSidebar />
+              <AdminSidebar isSuperAdmin={accessInfo.isSuperAdmin} />
 
               <div className="min-w-0 flex-1 pt-2">
                 <main className="px-6 md:px-10 lg:px-12 py-10">

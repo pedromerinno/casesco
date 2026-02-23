@@ -9,7 +9,7 @@ const Footer = () => {
                 className="w-full font-body font-semibold leading-none tracking-[-0.12em] [font-kerning:none] text-primary-foreground text-center md:text-left"
               >
                 <span className="block whitespace-nowrap text-[clamp(6.75rem,22vw,23.5rem)]">
-                  ONMX®
+                  MNNO®
                 </span>
               </h2>
             </div>
@@ -20,7 +20,7 @@ const Footer = () => {
               </p>
 
               <p className="text-xs text-primary-foreground/85 text-center">
-                © {new Date().getFullYear()} ONMX®. Todos os direitos reservados.
+                © {new Date().getFullYear()} MNNO®. Todos os direitos reservados.
               </p>
 
               <div className="flex justify-center md:justify-end">

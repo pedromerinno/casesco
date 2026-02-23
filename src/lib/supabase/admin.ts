@@ -91,3 +91,58 @@ export async function getUserAccessInfo(): Promise<UserAccessInfo | null> {
   };
 }
 
+export type UserWithCompaniesRow = {
+  id: string;
+  email: string;
+  name: string | null;
+  companies: Array<{ id: string; name: string }>;
+};
+
+/** Lista usuários e empresas vinculadas (apenas super-admin consegue ler todos). */
+export async function getUsersWithCompanies(): Promise<UserWithCompaniesRow[]> {
+  const { data, error } = await supabase
+    .from("user_companies")
+    .select("user_id, companies(id, name), users(id, email, name)");
+  if (error) throw error;
+
+  const byUser = new Map<string, UserWithCompaniesRow>();
+  for (const row of data as any[]) {
+    const u = row.users;
+    const c = row.companies;
+    if (!u?.id || !c?.id) continue;
+    let rec = byUser.get(u.id);
+    if (!rec) {
+      rec = { id: u.id, email: u.email ?? "", name: u.name ?? null, companies: [] };
+      byUser.set(u.id, rec);
+    }
+    if (!rec.companies.some((x: { id: string }) => x.id === c.id)) {
+      rec.companies.push({ id: c.id, name: c.name ?? "" });
+    }
+  }
+  return Array.from(byUser.values()).sort((a, b) => a.email.localeCompare(b.email));
+}
+
+/** Lista empresas ativas para seleção (super-admin). */
+export async function getAllCompaniesForAdmin(): Promise<Array<{ id: string; name: string }>> {
+  const { data, error } = await supabase
+    .from("companies")
+    .select("id, name")
+    .eq("is_active", true)
+    .order("name");
+  if (error) throw error;
+  return (data ?? []) as Array<{ id: string; name: string }>;
+}
+
+/** Busca usuário por e-mail (super-admin; para vincular existente). */
+export async function findUserByEmail(email: string): Promise<{ id: string; email: string; name: string | null } | null> {
+  const trimmed = email.trim().toLowerCase();
+  if (!trimmed) return null;
+  const { data, error } = await supabase
+    .from("users")
+    .select("id, email, name")
+    .ilike("email", trimmed)
+    .limit(1);
+  if (error || !data?.length) return null;
+  return data[0] as { id: string; email: string; name: string | null };
+}
+
