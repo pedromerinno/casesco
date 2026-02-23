@@ -19,6 +19,7 @@ import {
   DialogTrigger,
 } from "@/components/ui/dialog";
 import { Input } from "@/components/ui/input";
+import { Spinner } from "@/components/ui/spinner";
 import { useToast } from "@/hooks/use-toast";
 
 const INVITE_FN = "invite-user";
@@ -273,7 +274,7 @@ export default function AdminUsuarios() {
   if (!accessInfo) {
     return (
       <main className="min-h-[40vh] grid place-items-center">
-        <p className="text-sm text-muted-foreground">Carregando…</p>
+        <Spinner />
       </main>
     );
   }

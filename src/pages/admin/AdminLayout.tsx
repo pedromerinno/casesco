@@ -6,6 +6,7 @@ import { getUserAccessInfo, type UserAccessInfo } from "@/lib/supabase/admin";
 import { CompanyProvider } from "@/lib/company-context";
 import AdminTopBar from "@/components/admin/AdminTopBar";
 import AdminSidebar from "@/components/admin/AdminSidebar";
+import { Spinner } from "@/components/ui/spinner";
 
 export default function AdminLayout() {
   const navigate = useNavigate();
@@ -33,7 +34,7 @@ export default function AdminLayout() {
   if (!ready || !accessInfo) {
     return (
       <main className="min-h-screen bg-[#fbfbf9] text-black grid place-items-center px-6">
-        <p className="text-sm text-black/50">Carregando…</p>
+        <Spinner />
       </main>
     );
   }

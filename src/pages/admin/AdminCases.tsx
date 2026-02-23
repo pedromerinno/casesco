@@ -1,7 +1,7 @@
 import * as React from "react";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { useNavigate } from "react-router-dom";
-import { Pencil, Plus, Trash2 } from "lucide-react";
+import { LayoutGrid, List, Pencil, Plus, Trash2 } from "lucide-react";
 
 import { AdminPageSkeleton } from "@/components/admin/AdminPageSkeleton";
 import { Button } from "@/components/ui/button";
@@ -30,6 +30,15 @@ export default function AdminCases() {
   const [creatingNewClient, setCreatingNewClient] = React.useState(false);
   const [creating, setCreating] = React.useState(false);
   const [caseToRemove, setCaseToRemove] = React.useState<{ id: string; title: string } | null>(null);
+
+  const [viewMode, setViewMode] = React.useState<"list" | "cards">(() => {
+    if (typeof window === "undefined") return "list";
+    return (localStorage.getItem("admin_cases_view") as "list" | "cards") || "cards";
+  });
+
+  React.useEffect(() => {
+    localStorage.setItem("admin_cases_view", viewMode);
+  }, [viewMode]);
 
   const { company } = useCompany();
 
@@ -147,9 +156,6 @@ export default function AdminCases() {
       <div className="flex items-start justify-between gap-6">
         <div>
           <h1 className="font-display text-2xl font-semibold">Cases</h1>
-          <p className="mt-1 text-sm text-muted-foreground">
-            Crie e publique novos cases com o construtor de blocos.
-          </p>
         </div>
 
         <Button className="gap-2" onClick={() => setNewCaseOpen(true)}>
@@ -263,53 +269,136 @@ export default function AdminCases() {
       </Dialog>
 
       <div className="rounded-2xl border border-border bg-card overflow-hidden">
-        <div className="px-6 py-4 border-b border-border flex items-center justify-between">
+        <div className="px-6 py-4 border-b border-border flex items-center justify-between gap-4">
           <span className="text-sm text-muted-foreground">
-            {isLoading ? "Carregando…" : `${data?.length ?? 0} cases`}
+            {data?.length ?? 0} cases
           </span>
+          <div className="flex items-center gap-1 rounded-lg p-1 bg-muted/50">
+            <button
+              type="button"
+              onClick={() => setViewMode("list")}
+              className={`rounded-md p-2 transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring ${viewMode === "list" ? "bg-background text-foreground shadow-sm" : "text-muted-foreground hover:text-foreground"}`}
+              aria-label="Ver em lista"
+            >
+              <List className="h-4 w-4" />
+            </button>
+            <button
+              type="button"
+              onClick={() => setViewMode("cards")}
+              className={`rounded-md p-2 transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring ${viewMode === "cards" ? "bg-background text-foreground shadow-sm" : "text-muted-foreground hover:text-foreground"}`}
+              aria-label="Ver em cards"
+            >
+              <LayoutGrid className="h-4 w-4" />
+            </button>
+          </div>
         </div>
 
-        <div className="divide-y divide-border">
-          {(data ?? []).map((c) => (
-            <div key={c.id} className="px-6 py-4 flex items-center justify-between gap-4">
-              <div className="min-w-0">
-                <div className="font-medium truncate">{c.title}</div>
-                <div className="text-xs text-muted-foreground truncate">
-                  {c.clients?.name ?? "—"} ·{" "}
-                  {c.status === "published"
-                    ? "Publicado"
-                    : c.status === "restricted"
-                      ? "Restrito"
-                      : "Rascunho"}
+        {viewMode === "list" ? (
+          <div className="divide-y divide-border">
+            {(data ?? []).map((c) => (
+              <div key={c.id} className="px-6 py-4 flex items-center justify-between gap-4">
+                <div className="min-w-0">
+                  <div className="font-medium truncate">{c.title}</div>
+                  <div className="text-xs text-muted-foreground truncate">
+                    {c.clients?.name ?? "—"} ·{" "}
+                    {c.status === "published"
+                      ? "Publicado"
+                      : c.status === "restricted"
+                        ? "Restrito"
+                        : "Rascunho"}
+                  </div>
+                </div>
+                <div className="flex items-center gap-2">
+                  <Button
+                    variant="outline"
+                    size="icon"
+                    onClick={() => navigate(`/admin/cases/${c.id}/builder`)}
+                    aria-label="Editar"
+                  >
+                    <Pencil className="h-4 w-4" />
+                  </Button>
+                  <Button
+                    variant="outline"
+                    size="icon"
+                    onClick={() => setCaseToRemove({ id: c.id, title: c.title })}
+                    aria-label="Remover"
+                    className="text-destructive hover:text-destructive"
+                  >
+                    <Trash2 className="h-4 w-4" />
+                  </Button>
                 </div>
               </div>
-
-              <div className="flex items-center gap-2">
-                <Button
-                  variant="outline"
-                  size="icon"
-                  onClick={() => navigate(`/admin/cases/${c.id}/builder`)}
-                  aria-label="Editar"
-                >
-                  <Pencil className="h-4 w-4" />
-                </Button>
-                <Button
-                  variant="outline"
-                  size="icon"
-                  onClick={() => setCaseToRemove({ id: c.id, title: c.title })}
-                  aria-label="Remover"
-                  className="text-destructive hover:text-destructive"
-                >
-                  <Trash2 className="h-4 w-4" />
-                </Button>
+            ))}
+          </div>
+        ) : (
+          <div className="p-6 grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
+            {(data ?? []).map((c) => (
+              <div
+                key={c.id}
+                className="rounded-xl border border-border bg-background overflow-hidden flex flex-col"
+              >
+                <div className="aspect-video bg-muted relative">
+                  {c.cover_image_url ? (
+                    <img
+                      src={c.cover_image_url}
+                      alt=""
+                      className="absolute inset-0 w-full h-full object-cover"
+                    />
+                  ) : (
+                    <div className="absolute inset-0 grid place-items-center text-muted-foreground text-sm">
+                      Sem capa
+                    </div>
+                  )}
+                </div>
+                <div className="p-4 flex-1 flex flex-col min-w-0">
+                  <div className="font-medium truncate">{c.title}</div>
+                  <div className="text-xs text-muted-foreground truncate mt-0.5">
+                    {c.clients?.name ?? "—"}
+                  </div>
+                  <span
+                    className={`mt-2 inline-flex w-fit text-xs font-medium px-2 py-0.5 rounded-full ${
+                      c.status === "published"
+                        ? "bg-green-500/10 text-green-700"
+                        : c.status === "restricted"
+                          ? "bg-amber-500/10 text-amber-700"
+                          : "bg-muted text-muted-foreground"
+                    }`}
+                  >
+                    {c.status === "published"
+                      ? "Publicado"
+                      : c.status === "restricted"
+                        ? "Restrito"
+                        : "Rascunho"}
+                  </span>
+                </div>
+                <div className="p-4 pt-0 flex items-center gap-2">
+                  <Button
+                    variant="outline"
+                    size="sm"
+                    className="flex-1 gap-1"
+                    onClick={() => navigate(`/admin/cases/${c.id}/builder`)}
+                  >
+                    <Pencil className="h-3.5 w-3.5" />
+                    Editar
+                  </Button>
+                  <Button
+                    variant="outline"
+                    size="icon"
+                    onClick={() => setCaseToRemove({ id: c.id, title: c.title })}
+                    aria-label="Remover"
+                    className="text-destructive hover:text-destructive shrink-0"
+                  >
+                    <Trash2 className="h-4 w-4" />
+                  </Button>
+                </div>
               </div>
-            </div>
-          ))}
+            ))}
+          </div>
+        )}
 
-          {!isLoading && (data?.length ?? 0) === 0 && (
-            <div className="px-6 py-10 text-sm text-muted-foreground">Nenhum case cadastrado ainda.</div>
-          )}
-        </div>
+        {!isLoading && (data?.length ?? 0) === 0 && (
+          <div className="px-6 py-10 text-sm text-muted-foreground">Nenhum case cadastrado ainda.</div>
+        )}
       </div>
     </section>
   );
