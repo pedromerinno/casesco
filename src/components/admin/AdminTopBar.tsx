@@ -89,9 +89,9 @@ export default function AdminTopBar({ onSignOut, userEmail, userName, userAvatar
   }
 
   return (
-    <header className="sticky top-0 z-50 w-full border-b border-[#f6f5f1] bg-[#fbfbf9]">
-      <div className="w-full px-2">
-        <div className="h-12 flex items-center justify-between gap-3 py-2">
+    <header className="sticky top-0 z-50 h-16 w-full shrink-0 border-b border-[#f6f5f1] bg-[#fbfbf9]">
+      <div className="flex h-full w-full items-center px-2">
+        <div className="flex h-full w-full items-center justify-between gap-3">
           {/* Left: company selector */}
           <div className="relative">
             <button

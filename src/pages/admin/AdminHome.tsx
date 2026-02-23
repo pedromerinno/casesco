@@ -3,6 +3,7 @@ import { Link } from "react-router-dom";
 import { useQuery } from "@tanstack/react-query";
 import { Layers3, Tags, Users } from "lucide-react";
 
+import { AdminPageSkeleton } from "@/components/admin/AdminPageSkeleton";
 import { supabase } from "@/lib/supabase/client";
 import { getCategoriesForCompany } from "@/lib/case-builder/queries";
 import { useCompany } from "@/lib/company-context";
@@ -60,23 +61,29 @@ function StatCard({
 export default function AdminHome() {
   const { company } = useCompany();
 
-  const { data: caseCount = 0 } = useQuery({
+  const { data: caseCount = 0, isLoading: casesLoading } = useQuery({
     queryKey: ["admin", "dash", "cases", company.id],
     queryFn: () => getCaseCount(company.id),
     staleTime: 60 * 1000,
   });
 
-  const { data: clientCount = 0 } = useQuery({
+  const { data: clientCount = 0, isLoading: clientsLoading } = useQuery({
     queryKey: ["admin", "dash", "clients", company.group_id],
     queryFn: () => getClientCount(company.group_id),
     staleTime: 60 * 1000,
   });
 
-  const { data: categoryCount = 0 } = useQuery({
+  const { data: categoryCount = 0, isLoading: categoriesLoading } = useQuery({
     queryKey: ["admin", "dash", "categories", company.id],
     queryFn: () => getCategoryCount(company.id),
     staleTime: 60 * 1000,
   });
+
+  const isLoading = casesLoading || clientsLoading || categoriesLoading;
+
+  if (isLoading) {
+    return <AdminPageSkeleton blocks={1} />;
+  }
 
   return (
     <section className="space-y-6">

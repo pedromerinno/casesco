@@ -5,6 +5,7 @@ import { Pencil, Plus, Trash2 } from "lucide-react";
 import { supabase } from "@/lib/supabase/client";
 import { useCompany } from "@/lib/company-context";
 import { toSlug } from "@/lib/onmx/slug";
+import { AdminPageSkeleton } from "@/components/admin/AdminPageSkeleton";
 import { Button } from "@/components/ui/button";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
 import { Input } from "@/components/ui/input";
@@ -101,6 +102,10 @@ export default function AdminCategories() {
       toast({ title: "Erro", description: err?.message ?? "Não foi possível remover.", variant: "destructive" });
     },
   });
+
+  if (isLoading) {
+    return <AdminPageSkeleton blocks={2} />;
+  }
 
   return (
     <section className="space-y-6">

@@ -4,6 +4,7 @@ import { UploadCloud } from "lucide-react";
 
 import { supabase } from "@/lib/supabase/client";
 import { useCompany, type Company } from "@/lib/company-context";
+import { AdminPageSkeleton } from "@/components/admin/AdminPageSkeleton";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { useToast } from "@/hooks/use-toast";
@@ -239,6 +240,10 @@ export default function AdminSite() {
     type === "video"
       ? "video/mp4,video/webm,video/quicktime"
       : "image/png,image/jpeg,image/webp";
+
+  if (brandingQuery.isLoading) {
+    return <AdminPageSkeleton blocks={3} />;
+  }
 
   return (
     <section className="space-y-6">

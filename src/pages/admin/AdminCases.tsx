@@ -3,6 +3,7 @@ import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { useNavigate } from "react-router-dom";
 import { Pencil, Plus, Trash2 } from "lucide-react";
 
+import { AdminPageSkeleton } from "@/components/admin/AdminPageSkeleton";
 import { Button } from "@/components/ui/button";
 import { useToast } from "@/hooks/use-toast";
 import { supabase } from "@/lib/supabase/client";
@@ -136,6 +137,10 @@ export default function AdminCases() {
       });
     },
   });
+
+  if (isLoading) {
+    return <AdminPageSkeleton blocks={2} />;
+  }
 
   return (
     <section className="space-y-6">

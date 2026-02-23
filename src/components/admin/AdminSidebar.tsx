@@ -41,25 +41,31 @@ export default function AdminSidebar({ isSuperAdmin = false }: { isSuperAdmin?: 
   const [collapsed, setCollapsed] = React.useState(false);
 
   return (
-    <aside
-      className={cn(
-        "hidden md:flex shrink-0",
-        "sticky top-14",
-        "h-[calc(100vh-56px)]",
-        "pt-2",
-      )}
-    >
+    <>
+      {/* Espaço reservado para o sidebar fixo (evita que o conteúdo invada) */}
       <div
+        className={cn("hidden md:block shrink-0", collapsed ? "w-[72px]" : "w-[226px]")}
+        aria-hidden
+      />
+      <aside
         className={cn(
-          "relative bg-white",
-          "border border-[rgba(242,240,235,0.68)]",
-          "rounded-xl shadow-[-11px_0px_10.4px_-15px_rgba(162,140,120,0.17),-18px_0px_28.6px_-16px_rgba(162,140,120,0.05)]",
-          "overflow-hidden",
+          "hidden md:flex shrink-0",
+          "fixed left-2 top-16 z-10",
+          "h-[calc(100vh-4rem)]",
+          "pt-2",
           collapsed ? "w-[72px]" : "w-[226px]",
-          "h-full",
-          "p-3",
         )}
       >
+        <div
+          className={cn(
+            "relative bg-white",
+            "border border-[rgba(242,240,235,0.68)]",
+            "rounded-xl shadow-[-11px_0px_10.4px_-15px_rgba(162,140,120,0.17),-18px_0px_28.6px_-16px_rgba(162,140,120,0.05)]",
+            "overflow-hidden",
+            "w-full h-full",
+            "p-3",
+          )}
+        >
         <button
           type="button"
           onClick={() => setCollapsed((v) => !v)}
@@ -122,8 +128,9 @@ export default function AdminSidebar({ isSuperAdmin = false }: { isSuperAdmin?: 
             </nav>
           </div>
         </div>
-      </div>
-    </aside>
+        </div>
+      </aside>
+    </>
   );
 }
 
