@@ -90,13 +90,14 @@ export default function AdminSidebar({ isSuperAdmin = false }: { isSuperAdmin?: 
                   <NavLink
                     key={item.to}
                     to={item.to}
+                    end={item.to === "/admin"}
                     className={({ isActive }) =>
                       cn(
                         "w-full rounded-full px-1 py-1",
                         "flex items-center gap-2.5",
                         "transition-colors",
                         isActive
-                          ? "bg-[linear-gradient(90deg,rgba(196,184,161,0.20)_0%,rgba(196,184,161,0.0)_102%)]"
+                          ? "bg-[#f2f0eb]"
                           : "hover:bg-black/[0.03]",
                       )
                     }

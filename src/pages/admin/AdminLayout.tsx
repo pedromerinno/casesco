@@ -64,7 +64,9 @@ export default function AdminLayout() {
               <div className="min-w-0 flex-1 pt-2">
                 <main className="px-6 md:px-10 lg:px-12 py-10">
                   <div className="mx-auto w-full max-w-6xl">
-                    <Outlet />
+                    <div className="rounded-2xl bg-white p-6 md:p-8">
+                      <Outlet />
+                    </div>
                   </div>
                 </main>
               </div>
