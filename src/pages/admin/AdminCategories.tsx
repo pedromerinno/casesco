@@ -1,6 +1,6 @@
 import * as React from "react";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
-import { Pencil, Plus, Trash2 } from "lucide-react";
+import { MoreHorizontal, Pencil, Plus, Trash2 } from "lucide-react";
 
 import { supabase } from "@/lib/supabase/client";
 import { useCompany } from "@/lib/company-context";
@@ -49,6 +49,19 @@ export default function AdminCategories() {
   const [open, setOpen] = React.useState(false);
   const [editing, setEditing] = React.useState<CategoryRow | null>(null);
   const [name, setName] = React.useState("");
+  const [openDropdownId, setOpenDropdownId] = React.useState<string | null>(null);
+  const dropdownMenuRef = React.useRef<HTMLDivElement>(null);
+
+  React.useEffect(() => {
+    if (!openDropdownId) return;
+    function handleClickOutside(e: MouseEvent) {
+      if (dropdownMenuRef.current && !dropdownMenuRef.current.contains(e.target as Node)) {
+        setOpenDropdownId(null);
+      }
+    }
+    document.addEventListener("mousedown", handleClickOutside);
+    return () => document.removeEventListener("mousedown", handleClickOutside);
+  }, [openDropdownId]);
 
   React.useEffect(() => {
     if (!editing) setName("");
@@ -184,18 +197,44 @@ export default function AdminCategories() {
                     setOpen(true);
                   }}
                   aria-label="Editar"
+                  className="hover:bg-muted hover:text-foreground"
                 >
                   <Pencil className="h-4 w-4" />
                 </Button>
-                <Button
-                  variant="outline"
-                  size="icon"
-                  onClick={() => remove.mutate(cat.id)}
-                  aria-label="Remover"
-                  className="text-destructive hover:text-destructive"
+                <div
+                  className="relative"
+                  ref={openDropdownId === cat.id ? dropdownMenuRef : undefined}
                 >
-                  <Trash2 className="h-4 w-4" />
-                </Button>
+                  <Button
+                    variant="outline"
+                    size="icon"
+                    onClick={() => setOpenDropdownId(openDropdownId === cat.id ? null : cat.id)}
+                    aria-label="Mais opções"
+                    aria-expanded={openDropdownId === cat.id}
+                    className="hover:bg-muted hover:text-foreground"
+                  >
+                    <MoreHorizontal className="h-4 w-4" />
+                  </Button>
+                  {openDropdownId === cat.id && (
+                    <div
+                      className="absolute right-0 top-full z-10 mt-1 min-w-[140px] rounded-lg border border-border bg-card py-1 shadow-lg"
+                      role="menu"
+                    >
+                      <button
+                        type="button"
+                        className="flex w-full items-center gap-2 px-3 py-2 text-left text-sm text-destructive hover:bg-destructive/10"
+                        onClick={() => {
+                          remove.mutate(cat.id);
+                          setOpenDropdownId(null);
+                        }}
+                        role="menuitem"
+                      >
+                        <Trash2 className="h-4 w-4 shrink-0" />
+                        Apagar
+                      </button>
+                    </div>
+                  )}
+                </div>
               </div>
             </div>
           ))}

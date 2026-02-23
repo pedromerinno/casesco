@@ -1,7 +1,7 @@
 import * as React from "react";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { useNavigate } from "react-router-dom";
-import { LayoutGrid, List, Pencil, Plus, Trash2 } from "lucide-react";
+import { LayoutGrid, List, MoreHorizontal, Pencil, Plus, Trash2 } from "lucide-react";
 
 import { AdminPageSkeleton } from "@/components/admin/AdminPageSkeleton";
 import { Button } from "@/components/ui/button";
@@ -30,6 +30,19 @@ export default function AdminCases() {
   const [creatingNewClient, setCreatingNewClient] = React.useState(false);
   const [creating, setCreating] = React.useState(false);
   const [caseToRemove, setCaseToRemove] = React.useState<{ id: string; title: string } | null>(null);
+  const [openDropdownCaseId, setOpenDropdownCaseId] = React.useState<string | null>(null);
+  const dropdownMenuRef = React.useRef<HTMLDivElement>(null);
+
+  React.useEffect(() => {
+    if (!openDropdownCaseId) return;
+    function handleClickOutside(e: MouseEvent) {
+      if (dropdownMenuRef.current && !dropdownMenuRef.current.contains(e.target as Node)) {
+        setOpenDropdownCaseId(null);
+      }
+    }
+    document.addEventListener("mousedown", handleClickOutside);
+    return () => document.removeEventListener("mousedown", handleClickOutside);
+  }, [openDropdownCaseId]);
 
   const [viewMode, setViewMode] = React.useState<"list" | "cards">(() => {
     if (typeof window === "undefined") return "list";
@@ -268,7 +281,7 @@ export default function AdminCases() {
         </DialogContent>
       </Dialog>
 
-      <div className="rounded-2xl border border-border bg-card overflow-hidden">
+      <div className="rounded-2xl border border-border bg-card overflow-visible">
         <div className="px-6 py-4 border-b border-border flex items-center justify-between gap-4">
           <span className="text-sm text-muted-foreground">
             {data?.length ?? 0} cases
@@ -314,18 +327,44 @@ export default function AdminCases() {
                     size="icon"
                     onClick={() => navigate(`/admin/cases/${c.id}/builder`)}
                     aria-label="Editar"
+                    className="hover:bg-muted hover:text-foreground"
                   >
                     <Pencil className="h-4 w-4" />
                   </Button>
-                  <Button
-                    variant="outline"
-                    size="icon"
-                    onClick={() => setCaseToRemove({ id: c.id, title: c.title })}
-                    aria-label="Remover"
-                    className="text-destructive hover:text-destructive"
+                  <div
+                    className="relative"
+                    ref={openDropdownCaseId === c.id ? dropdownMenuRef : undefined}
                   >
-                    <Trash2 className="h-4 w-4" />
-                  </Button>
+                    <Button
+                      variant="outline"
+                      size="icon"
+                      onClick={() => setOpenDropdownCaseId(openDropdownCaseId === c.id ? null : c.id)}
+                      aria-label="Mais opções"
+                      aria-expanded={openDropdownCaseId === c.id}
+                      className="hover:bg-muted hover:text-foreground"
+                    >
+                      <MoreHorizontal className="h-4 w-4" />
+                    </Button>
+                    {openDropdownCaseId === c.id && (
+                      <div
+                        className="absolute right-0 top-full z-10 mt-1 min-w-[140px] rounded-lg border border-border bg-card py-1 shadow-lg"
+                        role="menu"
+                      >
+                        <button
+                          type="button"
+                          className="flex w-full items-center gap-2 px-3 py-2 text-left text-sm text-destructive hover:bg-destructive/10"
+                          onClick={() => {
+                            setCaseToRemove({ id: c.id, title: c.title });
+                            setOpenDropdownCaseId(null);
+                          }}
+                          role="menuitem"
+                        >
+                          <Trash2 className="h-4 w-4 shrink-0" />
+                          Apagar
+                        </button>
+                      </div>
+                    )}
+                  </div>
                 </div>
               </div>
             ))}
@@ -335,9 +374,9 @@ export default function AdminCases() {
             {(data ?? []).map((c) => (
               <div
                 key={c.id}
-                className="rounded-xl border border-border bg-background overflow-hidden flex flex-col"
+                className="rounded-xl border border-border bg-background overflow-visible flex flex-col"
               >
-                <div className="aspect-video bg-muted relative">
+                <div className="aspect-video bg-muted relative overflow-hidden rounded-t-xl">
                   {c.cover_image_url ? (
                     <img
                       src={c.cover_image_url}
@@ -375,21 +414,46 @@ export default function AdminCases() {
                   <Button
                     variant="outline"
                     size="sm"
-                    className="flex-1 gap-1"
+                    className="flex-1 gap-1 hover:bg-muted hover:text-foreground"
                     onClick={() => navigate(`/admin/cases/${c.id}/builder`)}
                   >
                     <Pencil className="h-3.5 w-3.5" />
                     Editar
                   </Button>
-                  <Button
-                    variant="outline"
-                    size="icon"
-                    onClick={() => setCaseToRemove({ id: c.id, title: c.title })}
-                    aria-label="Remover"
-                    className="text-destructive hover:text-destructive shrink-0"
+                  <div
+                    className="relative shrink-0"
+                    ref={openDropdownCaseId === c.id ? dropdownMenuRef : undefined}
                   >
-                    <Trash2 className="h-4 w-4" />
-                  </Button>
+                    <Button
+                      variant="outline"
+                      size="icon"
+                      onClick={() => setOpenDropdownCaseId(openDropdownCaseId === c.id ? null : c.id)}
+                      aria-label="Mais opções"
+                      aria-expanded={openDropdownCaseId === c.id}
+                      className="hover:bg-muted hover:text-foreground"
+                    >
+                      <MoreHorizontal className="h-4 w-4" />
+                    </Button>
+                    {openDropdownCaseId === c.id && (
+                      <div
+                        className="absolute right-0 top-full z-10 mt-1 min-w-[140px] rounded-lg border border-border bg-card py-1 shadow-lg"
+                        role="menu"
+                      >
+                        <button
+                          type="button"
+                          className="flex w-full items-center gap-2 px-3 py-2 text-left text-sm text-destructive hover:bg-destructive/10"
+                          onClick={() => {
+                            setCaseToRemove({ id: c.id, title: c.title });
+                            setOpenDropdownCaseId(null);
+                          }}
+                          role="menuitem"
+                        >
+                          <Trash2 className="h-4 w-4 shrink-0" />
+                          Apagar
+                        </button>
+                      </div>
+                    )}
+                  </div>
                 </div>
               </div>
             ))}
