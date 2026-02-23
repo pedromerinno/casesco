@@ -101,7 +101,7 @@ async function getCaseById(id: string): Promise<CaseRow | null> {
   const { data, error } = await supabase
     .from("cases")
     .select(
-      "id,title,slug,summary,year,cover_image_url,cover_video_url,cover_mux_playback_id,page_background,services,status,published_at,clients(id,name),case_category_cases(case_categories(id,name))",
+      "id,title,slug,summary,year,cover_image_url,cover_video_url,cover_mux_playback_id,page_background,container_padding,container_radius,services,status,published_at,clients(id,name),case_category_cases(case_categories(id,name))",
     )
     .eq("id", id)
     .maybeSingle();
@@ -119,6 +119,8 @@ async function getCaseById(id: string): Promise<CaseRow | null> {
     cover_video_url: row.cover_video_url ?? null,
     cover_mux_playback_id: row.cover_mux_playback_id ?? null,
     page_background: row.page_background ?? null,
+    container_padding: row.container_padding != null ? Number(row.container_padding) : null,
+    container_radius: row.container_radius != null ? Number(row.container_radius) : null,
     services: row.services,
     status: row.status,
     published_at: row.published_at,
@@ -762,6 +764,9 @@ export default function CaseBuilder() {
   const [pageBackgroundDraft, setPageBackgroundDraft] = React.useState<string | null>(null);
   const pageBackgroundInitRef = React.useRef(false);
   const pageBackgroundRef = React.useRef<string | null>(null);
+  const [containerPaddingDraft, setContainerPaddingDraft] = React.useState<number>(24);
+  const [containerRadiusDraft, setContainerRadiusDraft] = React.useState<number>(12);
+  const containerLayoutRef = React.useRef<{ padding: number; radius: number }>({ padding: 24, radius: 12 });
   const [focusedItem, setFocusedItem] = React.useState<{
     blockKey: string;
     columnIndex: number;
@@ -815,6 +820,15 @@ export default function CaseBuilder() {
     pageBackgroundRef.current = bg;
     pageBackgroundInitRef.current = true;
   }, [caseQuery.data]);
+
+  React.useEffect(() => {
+    if (!caseQuery.data) return;
+    const p = caseQuery.data.container_padding ?? 24;
+    const r = caseQuery.data.container_radius ?? 12;
+    setContainerPaddingDraft(p);
+    setContainerRadiusDraft(r);
+    containerLayoutRef.current = { padding: p, radius: r };
+  }, [caseQuery.data?.id, caseQuery.data?.container_padding, caseQuery.data?.container_radius]);
 
   React.useEffect(() => {
     if (!emptyZoneBlockMenuOpen) return;
@@ -984,6 +998,28 @@ export default function CaseBuilder() {
       const { error } = await supabase
         .from("cases")
         .update({ page_background: next })
+        .eq("id", caseId);
+      if (error) throw error;
+
+      await qc.invalidateQueries({ queryKey: ["admin", "case", caseId] });
+    } catch (err: any) {
+      toast.error(
+        err?.message ?? "Não foi possível salvar as configurações da página.",
+      );
+    }
+  }
+
+  async function savePageContainerLayout(padding: number, radius: number) {
+    try {
+      containerLayoutRef.current = { padding, radius };
+      setContainerPaddingDraft(padding);
+      setContainerRadiusDraft(radius);
+      const { error } = await supabase
+        .from("cases")
+        .update({
+          container_padding: Math.max(0, Math.min(120, padding)),
+          container_radius: Math.max(0, Math.min(48, radius)),
+        })
         .eq("id", caseId);
       if (error) throw error;
 
@@ -1797,12 +1833,15 @@ export default function CaseBuilder() {
       await saveCaseBlocks(caseId, drafts);
 
       const effectivePageBg = pageBackgroundRef.current ?? pageBackground;
+      const layout = containerLayoutRef.current;
       const { error } = await supabase
         .from("cases")
         .update({
           status: "published",
           published_at: new Date().toISOString(),
           page_background: effectivePageBg,
+          container_padding: layout.padding,
+          container_radius: layout.radius,
         })
         .eq("id", caseId);
       if (error) throw error;
@@ -2310,6 +2349,52 @@ export default function CaseBuilder() {
                           />
                         </div>
                       </div>
+
+                      <div className="space-y-3 border-t border-border pt-4">
+                        <div className="text-sm font-medium">Layout dos containers</div>
+                        <div className="space-y-4">
+                          <div className="space-y-2">
+                            <div className="flex justify-between text-xs text-muted-foreground">
+                              <span>Padding geral</span>
+                              <span>{containerPaddingDraft}px</span>
+                            </div>
+                            <input
+                              type="range"
+                              min={0}
+                              max={120}
+                              step={4}
+                              value={containerPaddingDraft}
+                              onChange={(e) => {
+                                const v = Number(e.target.value);
+                                setContainerPaddingDraft(v);
+                                savePageContainerLayout(v, containerRadiusDraft);
+                              }}
+                              className="w-full h-2 rounded-full appearance-none bg-muted accent-primary [&::-webkit-slider-thumb]:appearance-none [&::-webkit-slider-thumb]:h-4 [&::-webkit-slider-thumb]:w-4 [&::-webkit-slider-thumb]:rounded-full [&::-webkit-slider-thumb]:bg-primary [&::-webkit-slider-thumb]:cursor-pointer"
+                              aria-label="Padding geral em pixels"
+                            />
+                          </div>
+                          <div className="space-y-2">
+                            <div className="flex justify-between text-xs text-muted-foreground">
+                              <span>Borda arredondada</span>
+                              <span>{containerRadiusDraft}px</span>
+                            </div>
+                            <input
+                              type="range"
+                              min={0}
+                              max={48}
+                              step={2}
+                              value={containerRadiusDraft}
+                              onChange={(e) => {
+                                const v = Number(e.target.value);
+                                setContainerRadiusDraft(v);
+                                savePageContainerLayout(containerPaddingDraft, v);
+                              }}
+                              className="w-full h-2 rounded-full appearance-none bg-muted accent-primary [&::-webkit-slider-thumb]:appearance-none [&::-webkit-slider-thumb]:h-4 [&::-webkit-slider-thumb]:w-4 [&::-webkit-slider-thumb]:rounded-full [&::-webkit-slider-thumb]:bg-primary [&::-webkit-slider-thumb]:cursor-pointer"
+                              aria-label="Borda arredondada em pixels"
+                            />
+                          </div>
+                        </div>
+                      </div>
                     </DialogContent>
                   </Dialog>
 
@@ -2719,6 +2804,8 @@ export default function CaseBuilder() {
                   <BuilderPreview
                     blocks={previewBlocks}
                     className="space-y-0"
+                    containerPadding={containerPaddingDraft}
+                    containerRadius={containerRadiusDraft}
                     active={previewHighlightTarget}
                     onHover={(target) => setHoveredPreviewTarget(target)}
                     onActivate={(target) => {
@@ -2872,6 +2959,52 @@ export default function CaseBuilder() {
                         className="h-8 w-10 rounded-md border border-border bg-white"
                         aria-label="Selecionar cor do background"
                       />
+                    </div>
+                  </div>
+
+                  <div className="space-y-3 border-t border-[#f6f5f1] pt-4 mt-4">
+                    <div className="text-sm font-medium">Layout dos containers</div>
+                    <div className="space-y-4">
+                      <div className="space-y-1.5">
+                        <div className="flex justify-between text-[11px] text-black/50">
+                          <span>Padding geral</span>
+                          <span>{containerPaddingDraft}px</span>
+                        </div>
+                        <input
+                          type="range"
+                          min={0}
+                          max={120}
+                          step={4}
+                          value={containerPaddingDraft}
+                          onChange={(e) => {
+                            const v = Number(e.target.value);
+                            setContainerPaddingDraft(v);
+                            savePageContainerLayout(v, containerRadiusDraft);
+                          }}
+                          className="w-full h-2 rounded-full appearance-none bg-muted accent-primary [&::-webkit-slider-thumb]:appearance-none [&::-webkit-slider-thumb]:h-4 [&::-webkit-slider-thumb]:w-4 [&::-webkit-slider-thumb]:rounded-full [&::-webkit-slider-thumb]:bg-primary [&::-webkit-slider-thumb]:cursor-pointer"
+                          aria-label="Padding geral em pixels"
+                        />
+                      </div>
+                      <div className="space-y-1.5">
+                        <div className="flex justify-between text-[11px] text-black/50">
+                          <span>Borda arredondada</span>
+                          <span>{containerRadiusDraft}px</span>
+                        </div>
+                        <input
+                          type="range"
+                          min={0}
+                          max={48}
+                          step={2}
+                          value={containerRadiusDraft}
+                          onChange={(e) => {
+                            const v = Number(e.target.value);
+                            setContainerRadiusDraft(v);
+                            savePageContainerLayout(containerPaddingDraft, v);
+                          }}
+                          className="w-full h-2 rounded-full appearance-none bg-muted accent-primary [&::-webkit-slider-thumb]:appearance-none [&::-webkit-slider-thumb]:h-4 [&::-webkit-slider-thumb]:w-4 [&::-webkit-slider-thumb]:rounded-full [&::-webkit-slider-thumb]:bg-primary [&::-webkit-slider-thumb]:cursor-pointer"
+                          aria-label="Borda arredondada em pixels"
+                        />
+                      </div>
                     </div>
                   </div>
                 </div>

@@ -320,15 +320,31 @@ export default function CasePreview() {
               ver a prévia.
             </div>
           ) : hasContainerLayout ? (
-            <div className="space-y-0">
+            <div
+              className="flex flex-col"
+              style={{
+                padding: `${caseQuery.data?.container_padding ?? 24}px`,
+                gap: `${caseQuery.data?.container_padding ?? 24}px`,
+              }}
+            >
               {(blocksQuery.data ?? [])
                 .filter((b) => b.type === "container")
-                .map((block) => (
-                  <PublicContainerBlock
-                    key={block.id}
-                    content={normalizeContainerContent(block.content as any)}
-                  />
-                ))}
+                .map((block) => {
+                  const radius = caseQuery.data?.container_radius ?? 12;
+                  return (
+                    <div
+                      key={block.id}
+                      style={{
+                        borderRadius: radius ? `${radius}px` : undefined,
+                        overflow: radius ? "hidden" : undefined,
+                      }}
+                    >
+                      <PublicContainerBlock
+                        content={normalizeContainerContent(block.content as any)}
+                      />
+                    </div>
+                  );
+                })}
             </div>
           ) : (
             <div>

@@ -29,6 +29,8 @@ type CaseDetail = {
   cover_video_url: string | null;
   cover_mux_playback_id: string | null;
   page_background: string | null;
+  container_padding: number | null;
+  container_radius: number | null;
   services: string[] | null;
   client_name: string | null;
   categories: CaseCategory[];
@@ -89,7 +91,7 @@ async function getCaseBySlug(slug: string): Promise<CaseDetail> {
   const { data, error } = await supabase
     .from("cases")
     .select(
-      "id,title,slug,summary,year,cover_image_url,cover_video_url,cover_mux_playback_id,page_background,services,status,published_at,clients(name),case_category_cases(case_categories(id,name,slug))",
+      "id,title,slug,summary,year,cover_image_url,cover_video_url,cover_mux_playback_id,page_background,container_padding,container_radius,services,status,published_at,clients(name),case_category_cases(case_categories(id,name,slug))",
     )
     .eq("slug", slug)
     .eq("status", "published")
@@ -110,6 +112,8 @@ async function getCaseBySlug(slug: string): Promise<CaseDetail> {
     cover_video_url: string | null;
     cover_mux_playback_id: string | null;
     page_background: string | null;
+    container_padding: number | null;
+    container_radius: number | null;
     services: string[] | null;
     clients: { name: string } | null;
     case_category_cases: Array<{ case_categories: CaseCategory | null }> | null;
@@ -125,6 +129,8 @@ async function getCaseBySlug(slug: string): Promise<CaseDetail> {
     cover_video_url: row.cover_video_url ?? null,
     cover_mux_playback_id: row.cover_mux_playback_id ?? null,
     page_background: row.page_background ?? null,
+    container_padding: row.container_padding != null ? Number(row.container_padding) : null,
+    container_radius: row.container_radius != null ? Number(row.container_radius) : null,
     services: row.services,
     client_name: row.clients?.name ?? null,
     categories:
@@ -413,15 +419,31 @@ export default function CasePage() {
             </div>
           ) : (
             hasContainerLayout ? (
-              <div className="space-y-0">
+              <div
+                className="flex flex-col"
+                style={{
+                  padding: `${caseQuery.data?.container_padding ?? 24}px`,
+                  gap: `${caseQuery.data?.container_padding ?? 24}px`,
+                }}
+              >
                 {(blocksQuery.data ?? [])
                   .filter((b) => b.type === "container")
-                  .map((block) => (
-                    <PublicContainerBlock
-                      key={block.id}
-                      content={normalizeContainerContent(block.content as any)}
-                    />
-                  ))}
+                  .map((block) => {
+                    const radius = caseQuery.data?.container_radius ?? 12;
+                    return (
+                      <div
+                        key={block.id}
+                        style={{
+                          borderRadius: radius ? `${radius}px` : undefined,
+                          overflow: radius ? "hidden" : undefined,
+                        }}
+                      >
+                        <PublicContainerBlock
+                          content={normalizeContainerContent(block.content as any)}
+                        />
+                      </div>
+                    );
+                  })}
               </div>
             ) : (
               <div>

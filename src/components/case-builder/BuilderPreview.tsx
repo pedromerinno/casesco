@@ -291,6 +291,8 @@ export default function BuilderPreview({
   onDeleteBlock,
   onOpenAddContentMenu,
   className,
+  containerPadding = 24,
+  containerRadius = 12,
 }: {
   blocks: CaseBlock[];
   active: PreviewTarget | null;
@@ -308,6 +310,8 @@ export default function BuilderPreview({
     anchor: { top: number; left: number; right: number; bottom: number },
   ) => void;
   className?: string;
+  containerPadding?: number;
+  containerRadius?: number;
 }) {
   const sensors = useSensors(
     useSensor(PointerSensor, { activationConstraint: { distance: 6 } }),
@@ -418,8 +422,12 @@ export default function BuilderPreview({
       onDragEnd={handleDragEnd}
     >
       <div
-        className={cn("builder-preview flex flex-col gap-0 [&>div]:m-0 [&>div]:min-h-0", className)}
-        style={{ margin: 0, padding: 0 }}
+        className={cn("builder-preview flex flex-col [&>div]:m-0 [&>div]:min-h-0", className)}
+        style={{
+          margin: 0,
+          padding: containerPadding ?? 0,
+          gap: containerPadding ?? 0,
+        }}
         onMouseLeave={() => onHover?.(null)}
       >
         {blocks.map((block) => {
@@ -445,12 +453,18 @@ export default function BuilderPreview({
           if (block.type !== "container") return null;
 
           const c = normalizeContainerContent(block.content as any);
+          const radius = containerRadius ?? 0;
 
           return (
             <div
               key={block.id}
               className="relative group shrink-0"
-              style={{ margin: 0 }}
+              style={{
+                margin: 0,
+                ...(radius > 0
+                  ? { borderRadius: `${radius}px`, overflow: "hidden" as const }
+                  : {}),
+              }}
             >
               {/* Container hover toolbar (over columns / drop areas) */}
               <div

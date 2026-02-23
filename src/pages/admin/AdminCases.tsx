@@ -178,7 +178,7 @@ export default function AdminCases() {
       </div>
 
       <Dialog open={newCaseOpen} onOpenChange={setNewCaseOpen}>
-        <DialogContent className="max-w-md">
+        <DialogContent className="max-w-xl sm:p-8">
           <DialogHeader>
             <DialogTitle>Novo case</DialogTitle>
             <DialogDescription>
