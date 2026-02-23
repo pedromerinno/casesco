@@ -1,6 +1,6 @@
 import * as React from "react";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
-import { MoreVertical, Pencil, Trash2, UserPlus } from "lucide-react";
+import { KeyRound, MoreVertical, Pencil, Trash2, UserPlus } from "lucide-react";
 
 import { supabase, supabaseUrl, supabaseAnonKey } from "@/lib/supabase/client";
 import {
@@ -23,6 +23,7 @@ import { useToast } from "@/hooks/use-toast";
 
 const INVITE_FN = "invite-user";
 const CREATE_FN = "create-user";
+const UPDATE_PASSWORD_FN = "update-user-password";
 
 /** Chama Edge Function com fetch para garantir envio do token e leitura da mensagem de erro no corpo. */
 async function invokeAdminFunction<T = { error?: string; ok?: boolean }>(
@@ -69,6 +70,9 @@ export default function AdminUsuarios() {
   const [editingUser, setEditingUser] = React.useState<UserWithCompaniesRow | null>(null);
   const [editCompanyIds, setEditCompanyIds] = React.useState<Set<string>>(new Set());
   const [removingUser, setRemovingUser] = React.useState<UserWithCompaniesRow | null>(null);
+  const [changePasswordUser, setChangePasswordUser] = React.useState<UserWithCompaniesRow | null>(null);
+  const [newPassword, setNewPassword] = React.useState("");
+  const [confirmPassword, setConfirmPassword] = React.useState("");
   const [openMenuUserId, setOpenMenuUserId] = React.useState<string | null>(null);
 
   React.useEffect(() => {
@@ -204,6 +208,21 @@ export default function AdminUsuarios() {
     },
     onError: (err: Error) => {
       toast({ title: "Erro", description: err.message ?? "Não foi possível remover acesso.", variant: "destructive" });
+    },
+  });
+
+  const changePasswordMutation = useMutation({
+    mutationFn: async ({ userId, password }: { userId: string; password: string }) => {
+      await invokeAdminFunction(UPDATE_PASSWORD_FN, { user_id: userId, password });
+    },
+    onSuccess: () => {
+      toast({ title: "Senha alterada", description: "A senha do usuário foi atualizada." });
+      setChangePasswordUser(null);
+      setNewPassword("");
+      setConfirmPassword("");
+    },
+    onError: (err: Error) => {
+      toast({ title: "Erro", description: err.message ?? "Não foi possível alterar a senha.", variant: "destructive" });
     },
   });
 
@@ -518,6 +537,84 @@ export default function AdminUsuarios() {
         </DialogContent>
       </Dialog>
 
+      {/* Trocar senha */}
+      <Dialog
+        open={!!changePasswordUser}
+        onOpenChange={(open) => {
+          if (!open) {
+            setChangePasswordUser(null);
+            setNewPassword("");
+            setConfirmPassword("");
+          }
+        }}
+      >
+        <DialogContent className="max-w-md">
+          <DialogHeader>
+            <DialogTitle>Trocar senha</DialogTitle>
+          </DialogHeader>
+          {changePasswordUser && (
+            <div className="space-y-4">
+              <p className="text-sm text-muted-foreground">
+                Definir nova senha para <strong>{changePasswordUser.name || changePasswordUser.email}</strong> (
+                {changePasswordUser.email}).
+              </p>
+              <div className="space-y-2">
+                <label className="text-sm font-medium">Nova senha</label>
+                <Input
+                  type="password"
+                  value={newPassword}
+                  onChange={(e) => setNewPassword(e.target.value)}
+                  placeholder="Mínimo 6 caracteres"
+                  autoComplete="new-password"
+                />
+              </div>
+              <div className="space-y-2">
+                <label className="text-sm font-medium">Confirmar senha</label>
+                <Input
+                  type="password"
+                  value={confirmPassword}
+                  onChange={(e) => setConfirmPassword(e.target.value)}
+                  placeholder="Repita a senha"
+                  autoComplete="new-password"
+                />
+              </div>
+              {newPassword && confirmPassword && newPassword !== confirmPassword && (
+                <p className="text-xs text-destructive">As senhas não coincidem.</p>
+              )}
+              <div className="flex justify-end gap-3 pt-2">
+                <Button
+                  type="button"
+                  variant="outline"
+                  onClick={() => {
+                    setChangePasswordUser(null);
+                    setNewPassword("");
+                    setConfirmPassword("");
+                  }}
+                >
+                  Cancelar
+                </Button>
+                <Button
+                  type="button"
+                  onClick={() =>
+                    changePasswordMutation.mutate({
+                      userId: changePasswordUser.id,
+                      password: newPassword,
+                    })
+                  }
+                  disabled={
+                    newPassword.length < 6 ||
+                    newPassword !== confirmPassword ||
+                    changePasswordMutation.isPending
+                  }
+                >
+                  {changePasswordMutation.isPending ? "Alterando…" : "Alterar senha"}
+                </Button>
+              </div>
+            </div>
+          )}
+        </DialogContent>
+      </Dialog>
+
       <div className="rounded-2xl border border-border bg-card overflow-hidden">
         <div className="px-6 py-4 border-b border-border flex items-center justify-between">
           <span className="text-sm text-muted-foreground">
@@ -538,6 +635,10 @@ export default function AdminUsuarios() {
               onRemove={() => {
                 setOpenMenuUserId(null);
                 setRemovingUser(user);
+              }}
+              onChangePassword={() => {
+                setOpenMenuUserId(null);
+                setChangePasswordUser(user);
               }}
               isRemoving={removeLinkMutation.isPending}
               isMenuOpen={openMenuUserId === user.id}
@@ -561,6 +662,7 @@ function UserRow({
   onRemoveLink,
   onEdit,
   onRemove,
+  onChangePassword,
   isRemoving,
   isMenuOpen,
   onMenuOpenChange,
@@ -569,6 +671,7 @@ function UserRow({
   onRemoveLink: (companyId: string) => void;
   onEdit: () => void;
   onRemove: () => void;
+  onChangePassword: () => void;
   isRemoving: boolean;
   isMenuOpen: boolean;
   onMenuOpenChange: (open: boolean) => void;
@@ -616,6 +719,15 @@ function UserRow({
               >
                 <Pencil className="h-4 w-4 shrink-0" />
                 Editar empresas
+              </button>
+              <button
+                type="button"
+                className="flex w-full items-center gap-2 px-3 py-2 text-left text-sm hover:bg-muted"
+                onClick={onChangePassword}
+                role="menuitem"
+              >
+                <KeyRound className="h-4 w-4 shrink-0" />
+                Trocar senha
               </button>
               <button
                 type="button"
