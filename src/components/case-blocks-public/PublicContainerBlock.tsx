@@ -21,14 +21,14 @@ export type PreviewHoverTarget =
   | { blockId: string }
   | { blockId: string; columnIndex: number; itemIndex: number };
 
-function ItemRenderer({ item }: { item: SlotContent }) {
+function ItemRenderer({ item, accentColor }: { item: SlotContent; accentColor?: string }) {
   switch (item.type) {
     case "image":
       return <PublicImageBlock content={item.content as ImageContent} />;
     case "text":
       return <PublicTextBlock content={item.content as TextContent} />;
     case "video":
-      return <PublicVideoBlock content={item.content as VideoContent} />;
+      return <PublicVideoBlock content={item.content as VideoContent} accentColor={accentColor} />;
     case "title":
       return <PublicTitleBlock content={item.content as TitleContent} />;
     case "button":
@@ -40,6 +40,7 @@ function ItemRenderer({ item }: { item: SlotContent }) {
 
 type Props = {
   content: ContainerContent;
+  accentColor?: string;
   interactive?: {
     blockId: string;
     onHover: (target: PreviewHoverTarget) => void;
@@ -57,7 +58,7 @@ function clampPadding(p: ContainerContent["padding"]) {
   };
 }
 
-export default function PublicContainerBlock({ content, interactive }: Props) {
+export default function PublicContainerBlock({ content, accentColor, interactive }: Props) {
   const c = normalizeContainerContent(content);
   const bgColor = c.backgroundColor?.trim?.() || undefined;
   const padding = clampPadding(c.padding);
@@ -190,7 +191,7 @@ export default function PublicContainerBlock({ content, interactive }: Props) {
                         : undefined
                     }
                   >
-                    <ItemRenderer item={item} />
+                    <ItemRenderer item={item} accentColor={accentColor} />
                   </div>
                 );
               })}

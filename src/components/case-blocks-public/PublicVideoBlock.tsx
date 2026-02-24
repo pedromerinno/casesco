@@ -1,8 +1,8 @@
 import * as React from "react";
-import MuxPlayer from "@mux/mux-player-react";
 import type { VideoContent } from "@/lib/case-builder/types";
 import { Play } from "lucide-react";
 import { cn } from "@/lib/utils";
+import VideoPlayer from "@/components/ui/VideoPlayer";
 
 const ASPECT_MAP: Record<string, string> = {
   "16/9": "aspect-video",
@@ -33,7 +33,7 @@ function getEmbedUrl(url: string, provider: string): string | null {
   return null;
 }
 
-type Props = { content: VideoContent };
+type Props = { content: VideoContent; accentColor?: string };
 
 function clampPct(v: any, fallback = 100) {
   const n = Number(v);
@@ -152,7 +152,7 @@ function VideoFallback({
   );
 }
 
-export default function PublicVideoBlock({ content }: Props) {
+export default function PublicVideoBlock({ content, accentColor }: Props) {
   const aspectKey = content.aspect ?? "16/9";
   const aspect = ASPECT_MAP[aspectKey] ?? ASPECT_MAP["16/9"];
   const isOriginalAspect = aspectKey === "original";
@@ -176,87 +176,39 @@ export default function PublicVideoBlock({ content }: Props) {
   }
 
   if (content.provider === "mux" && content.muxPlaybackId) {
-    const ref = React.useRef<any>(null);
-
-    React.useEffect(() => {
-      if (!autoPlay) return;
-      const el = ref.current;
-      if (!el?.play) return;
-      // Best-effort: start playback when toggling autoplay on.
-      Promise.resolve()
-        .then(() => el.play())
-        .catch(() => {});
-    }, [autoPlay, content.muxPlaybackId]);
-
-    // Mux Player may still show controls on hover depending on theme/autohide behavior.
-    // When the user disables controls, we enforce it via the supported CSS variable.
-    const muxStyle = controls
-      ? undefined
-      : ({
-          ["--controls" as any]: "none",
-          ["--center-controls" as any]: "none",
-          ["--top-controls" as any]: "none",
-          ["--bottom-controls" as any]: "none",
-        } as React.CSSProperties);
-
+    const hlsUrl = `https://stream.mux.com/${content.muxPlaybackId}.m3u8`;
     const aspectRatio = isOriginalAspect ? undefined : (ASPECT_RATIO_VALUE[aspectKey] || "16/9");
 
     return (
       <VideoFrame content={content}>
-        <div
-          className={cn(
-            "w-full overflow-hidden",
-            controls ? "" : "mux-no-controls",
-          )}
-          style={{ fontSize: 0, lineHeight: 0 }}
-        >
-          <MuxPlayer
-            ref={ref}
-            playbackId={content.muxPlaybackId}
-            streamType="on-demand"
-            className="w-full h-auto"
-            style={{
-              ...muxStyle,
-              aspectRatio,
-              display: "block",
-            }}
-            controls={controls}
-            hideControls={!controls}
-            autoPlay={autoPlay ? "muted" : undefined}
-            muted={autoPlay || !controls}
-            playsInline
-            loop={loop}
-          />
-        </div>
+        <VideoPlayer
+          src={hlsUrl}
+          controls={controls}
+          autoPlay={autoPlay}
+          muted={autoPlay || !controls}
+          loop={loop}
+          accentColor={accentColor}
+          aspectRatio={aspectRatio}
+          className="w-full h-auto"
+        />
       </VideoFrame>
     );
   }
 
   if (content.provider === "file") {
-    const videoRef = React.useRef<HTMLVideoElement | null>(null);
-
-    React.useEffect(() => {
-      if (!autoPlay) return;
-      const el = videoRef.current;
-      if (!el) return;
-      el.muted = true;
-      el.play().catch(() => {});
-    }, [autoPlay, content.url]);
-
     const fileAspectRatio = isOriginalAspect ? undefined : (ASPECT_RATIO_VALUE[aspectKey] || "16/9");
 
     return (
       <VideoFrame content={content}>
-        <video
-          ref={videoRef}
+        <VideoPlayer
           src={content.url}
           controls={controls}
           autoPlay={autoPlay}
           muted={autoPlay || !controls}
-          playsInline
           loop={loop}
-          className="w-full h-auto object-cover"
-          style={{ aspectRatio: fileAspectRatio, display: "block" }}
+          accentColor={accentColor}
+          aspectRatio={fileAspectRatio}
+          className="w-full h-auto"
         />
       </VideoFrame>
     );

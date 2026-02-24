@@ -108,14 +108,14 @@ function parseColumnId(id: string): { blockId: string; columnIndex: number } | n
   return { blockId: m[1], columnIndex: Number(m[2]) };
 }
 
-function ItemRenderer({ item }: { item: SlotContent }) {
+function ItemRenderer({ item, accentColor }: { item: SlotContent; accentColor?: string }) {
   switch (item.type) {
     case "image":
       return <PublicImageBlock content={item.content as ImageContent} />;
     case "text":
       return <PublicTextBlock content={item.content as TextContent} />;
     case "video":
-      return <PublicVideoBlock content={item.content as VideoContent} />;
+      return <PublicVideoBlock content={item.content as VideoContent} accentColor={accentColor} />;
     case "title":
       return <PublicTitleBlock content={item.content as TitleContent} />;
     case "button":
@@ -293,6 +293,8 @@ export default function BuilderPreview({
   className,
   containerPadding = 0,
   containerRadius = 0,
+  containerGap = 0,
+  accentColor,
 }: {
   blocks: CaseBlock[];
   active: PreviewTarget | null;
@@ -312,6 +314,8 @@ export default function BuilderPreview({
   className?: string;
   containerPadding?: number;
   containerRadius?: number;
+  containerGap?: number;
+  accentColor?: string;
 }) {
   const sensors = useSensors(
     useSensor(PointerSensor, { activationConstraint: { distance: 6 } }),
@@ -426,7 +430,7 @@ export default function BuilderPreview({
         style={{
           margin: 0,
           padding: containerPadding ?? 0,
-          gap: 0,
+          gap: containerGap ?? 0,
         }}
         onMouseLeave={() => onHover?.(null)}
       >
@@ -868,7 +872,7 @@ export default function BuilderPreview({
                                   })
                                 }
                               >
-                                <ItemRenderer item={item} />
+                                <ItemRenderer item={item} accentColor={accentColor} />
                               </SortablePreviewItem>
                             </div>
                           );

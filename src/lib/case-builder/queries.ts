@@ -126,6 +126,7 @@ export type CaseDetailPreview = {
   page_background: string | null;
   container_padding: number | null;
   container_radius: number | null;
+  container_gap: number | null;
   services: string[] | null;
   client_name: string | null;
   categories: Array<{ id: string; name: string; slug?: string }>;
@@ -157,7 +158,7 @@ export async function getCaseByIdForPreview(
   const { data, error } = await supabase
     .from("cases")
     .select(
-      "id,title,slug,summary,year,cover_image_url,cover_video_url,cover_mux_playback_id,page_background,container_padding,container_radius,services,clients(name),case_category_cases(case_categories(id,name,slug))",
+      "id,title,slug,summary,year,cover_image_url,cover_video_url,cover_mux_playback_id,page_background,container_padding,container_radius,container_gap,services,clients(name),case_category_cases(case_categories(id,name,slug))",
     )
     .eq("id", caseId)
     .maybeSingle();
@@ -177,6 +178,7 @@ export async function getCaseByIdForPreview(
     page_background: row.page_background ?? null,
     container_padding: row.container_padding != null ? Number(row.container_padding) : null,
     container_radius: row.container_radius != null ? Number(row.container_radius) : null,
+    container_gap: row.container_gap != null ? Number(row.container_gap) : null,
     services: row.services,
     client_name: row.clients?.name ?? null,
     categories:
@@ -269,6 +271,7 @@ export type CaseRow = {
   page_background: string | null;
   container_padding: number | null;
   container_radius: number | null;
+  container_gap: number | null;
   services: string[] | null;
   status: string | null;
   published_at: string | null;
@@ -280,7 +283,7 @@ export async function getCases(companyId: string): Promise<CaseRow[]> {
   const { data, error } = await supabase
     .from("cases")
     .select(
-      "id,title,slug,summary,year,cover_image_url,cover_video_url,cover_mux_playback_id,page_background,container_padding,container_radius,services,status,published_at,clients(id,name),case_category_cases(case_categories(id,name))",
+      "id,title,slug,summary,year,cover_image_url,cover_video_url,cover_mux_playback_id,page_background,container_padding,container_radius,container_gap,services,status,published_at,clients(id,name),case_category_cases(case_categories(id,name))",
     )
     .eq("owner_company_id", companyId)
     .order("created_at", { ascending: false });
@@ -299,6 +302,7 @@ export async function getCases(companyId: string): Promise<CaseRow[]> {
       page_background: row.page_background ?? null,
       container_padding: row.container_padding != null ? Number(row.container_padding) : null,
       container_radius: row.container_radius != null ? Number(row.container_radius) : null,
+      container_gap: row.container_gap != null ? Number(row.container_gap) : null,
       services: row.services,
       status: row.status,
       published_at: row.published_at,

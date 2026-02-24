@@ -31,6 +31,7 @@ type CaseDetail = {
   page_background: string | null;
   container_padding: number | null;
   container_radius: number | null;
+  container_gap: number | null;
   services: string[] | null;
   client_name: string | null;
   categories: CaseCategory[];
@@ -91,7 +92,7 @@ async function getCaseBySlug(slug: string): Promise<CaseDetail> {
   const { data, error } = await supabase
     .from("cases")
     .select(
-      "id,title,slug,summary,year,cover_image_url,cover_video_url,cover_mux_playback_id,page_background,container_padding,container_radius,services,status,published_at,clients(name),case_category_cases(case_categories(id,name,slug))",
+      "id,title,slug,summary,year,cover_image_url,cover_video_url,cover_mux_playback_id,page_background,container_padding,container_radius,container_gap,services,status,published_at,clients(name),case_category_cases(case_categories(id,name,slug))",
     )
     .eq("slug", slug)
     .eq("status", "published")
@@ -114,6 +115,7 @@ async function getCaseBySlug(slug: string): Promise<CaseDetail> {
     page_background: string | null;
     container_padding: number | null;
     container_radius: number | null;
+    container_gap: number | null;
     services: string[] | null;
     clients: { name: string } | null;
     case_category_cases: Array<{ case_categories: CaseCategory | null }> | null;
@@ -131,6 +133,7 @@ async function getCaseBySlug(slug: string): Promise<CaseDetail> {
     page_background: row.page_background ?? null,
     container_padding: row.container_padding != null ? Number(row.container_padding) : null,
     container_radius: row.container_radius != null ? Number(row.container_radius) : null,
+    container_gap: row.container_gap != null ? Number(row.container_gap) : null,
     services: row.services,
     client_name: row.clients?.name ?? null,
     categories:
@@ -423,7 +426,7 @@ export default function CasePage() {
                 className="flex flex-col"
                 style={{
                   padding: `${caseQuery.data?.container_padding ?? 0}px`,
-                  gap: 0,
+                  gap: `${caseQuery.data?.container_gap ?? 0}px`,
                 }}
               >
                 {(blocksQuery.data ?? [])

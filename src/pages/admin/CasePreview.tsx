@@ -16,6 +16,7 @@ import type { VideoContent } from "@/lib/case-builder/types";
 import { normalizeContainerContent } from "@/lib/case-builder/types";
 import PublicContainerBlock from "@/components/case-blocks-public/PublicContainerBlock";
 import PublicVideoBlock from "@/components/case-blocks-public/PublicVideoBlock";
+import { useCompany } from "@/lib/company-context";
 
 type GalleryImage = {
   id: string;
@@ -50,6 +51,8 @@ function parseMuxPlaybackId(url: string): string | null {
 
 export default function CasePreview() {
   const { id } = useParams<{ id: string }>();
+  const { company } = useCompany();
+  const accentColor = company.brand_color ?? "#9D00F2";
   const [dockMenu, setDockMenu] = React.useState(false);
   const dockSentinelRef = React.useRef<HTMLDivElement | null>(null);
   const [infoOpen, setInfoOpen] = React.useState(false);
@@ -324,7 +327,7 @@ export default function CasePreview() {
               className="flex flex-col"
               style={{
                 padding: `${caseQuery.data?.container_padding ?? 0}px`,
-                gap: 0,
+                gap: `${caseQuery.data?.container_gap ?? 0}px`,
               }}
             >
               {(blocksQuery.data ?? [])
@@ -341,6 +344,7 @@ export default function CasePreview() {
                     >
                       <PublicContainerBlock
                         content={normalizeContainerContent(block.content as any)}
+                        accentColor={accentColor}
                       />
                     </div>
                   );
@@ -361,7 +365,7 @@ export default function CasePreview() {
                   />
                 ) : (
                   <div key={item.id}>
-                    <PublicVideoBlock content={item.content} />
+                    <PublicVideoBlock content={item.content} accentColor={accentColor} />
                   </div>
                 ),
               )}

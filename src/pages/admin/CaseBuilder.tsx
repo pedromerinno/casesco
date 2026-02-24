@@ -101,7 +101,7 @@ async function getCaseById(id: string): Promise<CaseRow | null> {
   const { data, error } = await supabase
     .from("cases")
     .select(
-      "id,title,slug,summary,year,cover_image_url,cover_video_url,cover_mux_playback_id,page_background,container_padding,container_radius,services,status,published_at,clients(id,name),case_category_cases(case_categories(id,name))",
+      "id,title,slug,summary,year,cover_image_url,cover_video_url,cover_mux_playback_id,page_background,container_padding,container_radius,container_gap,services,status,published_at,clients(id,name),case_category_cases(case_categories(id,name))",
     )
     .eq("id", id)
     .maybeSingle();
@@ -121,6 +121,7 @@ async function getCaseById(id: string): Promise<CaseRow | null> {
     page_background: row.page_background ?? null,
     container_padding: row.container_padding != null ? Number(row.container_padding) : null,
     container_radius: row.container_radius != null ? Number(row.container_radius) : null,
+    container_gap: row.container_gap != null ? Number(row.container_gap) : null,
     services: row.services,
     status: row.status,
     published_at: row.published_at,
@@ -247,7 +248,7 @@ function BlockListItem({
   }
 
   return (
-    <div ref={setNodeRef} style={style} className="space-y-1">
+    <div ref={setNodeRef} style={style} className="space-y-1" data-tree-id={id}>
       <div
         className={cn(
           "w-full",
@@ -479,7 +480,7 @@ function SidebarContentItem({
   };
 
   return (
-    <div ref={setNodeRef} style={style} className="group">
+    <div ref={setNodeRef} style={style} className="group" data-tree-id={id}>
       <div
         className={cn(
           "w-full rounded-lg px-2 py-1.5",
@@ -766,7 +767,8 @@ export default function CaseBuilder() {
   const pageBackgroundRef = React.useRef<string | null>(null);
   const [containerPaddingDraft, setContainerPaddingDraft] = React.useState<number>(0);
   const [containerRadiusDraft, setContainerRadiusDraft] = React.useState<number>(0);
-  const containerLayoutRef = React.useRef<{ padding: number; radius: number }>({ padding: 0, radius: 0 });
+  const [containerGapDraft, setContainerGapDraft] = React.useState<number>(0);
+  const containerLayoutRef = React.useRef<{ padding: number; radius: number; gap: number }>({ padding: 0, radius: 0, gap: 0 });
   const [focusedItem, setFocusedItem] = React.useState<{
     blockKey: string;
     columnIndex: number;
@@ -825,10 +827,12 @@ export default function CaseBuilder() {
     if (!caseQuery.data) return;
     const p = caseQuery.data.container_padding ?? 0;
     const r = caseQuery.data.container_radius ?? 0;
+    const g = caseQuery.data.container_gap ?? 0;
     setContainerPaddingDraft(p);
     setContainerRadiusDraft(r);
-    containerLayoutRef.current = { padding: p, radius: r };
-  }, [caseQuery.data?.id, caseQuery.data?.container_padding, caseQuery.data?.container_radius]);
+    setContainerGapDraft(g);
+    containerLayoutRef.current = { padding: p, radius: r, gap: g };
+  }, [caseQuery.data?.id, caseQuery.data?.container_padding, caseQuery.data?.container_radius, caseQuery.data?.container_gap]);
 
   React.useEffect(() => {
     if (!emptyZoneBlockMenuOpen) return;
@@ -996,10 +1000,11 @@ export default function CaseBuilder() {
     setPageBackgroundDraft(next);
   }
 
-  function savePageContainerLayout(padding: number, radius: number) {
-    containerLayoutRef.current = { padding, radius };
+  function savePageContainerLayout(padding: number, radius: number, gap: number) {
+    containerLayoutRef.current = { padding, radius, gap };
     setContainerPaddingDraft(padding);
     setContainerRadiusDraft(radius);
+    setContainerGapDraft(gap);
   }
 
   function addContentItem(blockKey: string, columnIndex: number, type: ContentBlockType) {
@@ -1694,6 +1699,7 @@ export default function CaseBuilder() {
           page_background: effectivePageBg,
           container_padding: Math.max(0, Math.min(120, layout.padding)),
           container_radius: Math.max(0, Math.min(48, layout.radius)),
+          container_gap: Math.max(0, Math.min(60, layout.gap)),
         })
         .eq("id", caseId);
       if (pageErr) throw pageErr;
@@ -1827,6 +1833,7 @@ export default function CaseBuilder() {
           page_background: effectivePageBg,
           container_padding: layout.padding,
           container_radius: layout.radius,
+          container_gap: layout.gap,
         })
         .eq("id", caseId);
       if (error) throw error;
@@ -1864,6 +1871,35 @@ export default function CaseBuilder() {
   }, [focusedItem, selectedKey]);
 
   const previewHighlightTarget = hoveredPreviewTarget ?? activePreviewTarget;
+
+  // Scroll sidebar tree to the active element when selection changes
+  React.useEffect(() => {
+    if (!selectedKey || selectedKey === PAGE_PANEL_KEY) return;
+
+    // Build the data-tree-id we want to scroll to
+    let treeId: string;
+    if (focusedItem && focusedItem.blockKey === selectedKey) {
+      // Find the _key for the item so we can match the tree node
+      const block = drafts.find((d) => d._key === focusedItem.blockKey);
+      if (block?.type === "container") {
+        const c = normalizeContainerContent(block.content as any);
+        const col = c.slots[focusedItem.columnIndex] ?? [];
+        const item = col[focusedItem.itemIndex] as any;
+        const itemKey = item?._key ?? "";
+        treeId = `item:${focusedItem.blockKey}:${focusedItem.columnIndex}:${itemKey}`;
+      } else {
+        treeId = selectedKey;
+      }
+    } else {
+      treeId = selectedKey;
+    }
+
+    // Small delay to allow expanded blocks to render their children
+    requestAnimationFrame(() => {
+      const el = document.querySelector(`[data-tree-id="${treeId}"]`);
+      el?.scrollIntoView({ behavior: "smooth", block: "nearest" });
+    });
+  }, [selectedKey, focusedItem?.blockKey, focusedItem?.columnIndex, focusedItem?.itemIndex]);
 
   function moveContentItem(intent: {
     from: { blockId: string; columnIndex: number; itemKey: string };
@@ -2352,7 +2388,7 @@ export default function CaseBuilder() {
                               onChange={(e) => {
                                 const v = Number(e.target.value);
                                 setContainerPaddingDraft(v);
-                                savePageContainerLayout(v, containerRadiusDraft);
+                                savePageContainerLayout(v, containerRadiusDraft, containerGapDraft);
                               }}
                               className="w-full h-2 rounded-full appearance-none bg-muted accent-primary [&::-webkit-slider-thumb]:appearance-none [&::-webkit-slider-thumb]:h-4 [&::-webkit-slider-thumb]:w-4 [&::-webkit-slider-thumb]:rounded-full [&::-webkit-slider-thumb]:bg-primary [&::-webkit-slider-thumb]:cursor-pointer"
                               aria-label="Padding geral em pixels"
@@ -2372,10 +2408,30 @@ export default function CaseBuilder() {
                               onChange={(e) => {
                                 const v = Number(e.target.value);
                                 setContainerRadiusDraft(v);
-                                savePageContainerLayout(containerPaddingDraft, v);
+                                savePageContainerLayout(containerPaddingDraft, v, containerGapDraft);
                               }}
                               className="w-full h-2 rounded-full appearance-none bg-muted accent-primary [&::-webkit-slider-thumb]:appearance-none [&::-webkit-slider-thumb]:h-4 [&::-webkit-slider-thumb]:w-4 [&::-webkit-slider-thumb]:rounded-full [&::-webkit-slider-thumb]:bg-primary [&::-webkit-slider-thumb]:cursor-pointer"
                               aria-label="Borda arredondada em pixels"
+                            />
+                          </div>
+                          <div className="space-y-2">
+                            <div className="flex justify-between text-xs text-muted-foreground">
+                              <span>Gap entre containers</span>
+                              <span>{containerGapDraft}px</span>
+                            </div>
+                            <input
+                              type="range"
+                              min={0}
+                              max={60}
+                              step={2}
+                              value={containerGapDraft}
+                              onChange={(e) => {
+                                const v = Number(e.target.value);
+                                setContainerGapDraft(v);
+                                savePageContainerLayout(containerPaddingDraft, containerRadiusDraft, v);
+                              }}
+                              className="w-full h-2 rounded-full appearance-none bg-muted accent-primary [&::-webkit-slider-thumb]:appearance-none [&::-webkit-slider-thumb]:h-4 [&::-webkit-slider-thumb]:w-4 [&::-webkit-slider-thumb]:rounded-full [&::-webkit-slider-thumb]:bg-primary [&::-webkit-slider-thumb]:cursor-pointer"
+                              aria-label="Gap entre containers em pixels"
                             />
                           </div>
                         </div>
@@ -2791,6 +2847,8 @@ export default function CaseBuilder() {
                     className="space-y-0"
                     containerPadding={containerPaddingDraft}
                     containerRadius={containerRadiusDraft}
+                    containerGap={containerGapDraft}
+                    accentColor={company.brand_color ?? "#9D00F2"}
                     active={previewHighlightTarget}
                     onHover={(target) => setHoveredPreviewTarget(target)}
                     onActivate={(target) => {
@@ -2801,6 +2859,7 @@ export default function CaseBuilder() {
                           columnIndex: target.columnIndex,
                           itemIndex: target.itemIndex,
                         });
+                        setExpandedBlocks((p) => ({ ...p, [target.blockId]: true }));
                       } else {
                         setFocusedItem(null);
                       }
@@ -2964,7 +3023,7 @@ export default function CaseBuilder() {
                           onChange={(e) => {
                             const v = Number(e.target.value);
                             setContainerPaddingDraft(v);
-                            savePageContainerLayout(v, containerRadiusDraft);
+                            savePageContainerLayout(v, containerRadiusDraft, containerGapDraft);
                           }}
                           className="w-full h-2 rounded-full appearance-none bg-muted accent-primary [&::-webkit-slider-thumb]:appearance-none [&::-webkit-slider-thumb]:h-4 [&::-webkit-slider-thumb]:w-4 [&::-webkit-slider-thumb]:rounded-full [&::-webkit-slider-thumb]:bg-primary [&::-webkit-slider-thumb]:cursor-pointer"
                           aria-label="Padding geral em pixels"
@@ -2984,10 +3043,30 @@ export default function CaseBuilder() {
                           onChange={(e) => {
                             const v = Number(e.target.value);
                             setContainerRadiusDraft(v);
-                            savePageContainerLayout(containerPaddingDraft, v);
+                            savePageContainerLayout(containerPaddingDraft, v, containerGapDraft);
                           }}
                           className="w-full h-2 rounded-full appearance-none bg-muted accent-primary [&::-webkit-slider-thumb]:appearance-none [&::-webkit-slider-thumb]:h-4 [&::-webkit-slider-thumb]:w-4 [&::-webkit-slider-thumb]:rounded-full [&::-webkit-slider-thumb]:bg-primary [&::-webkit-slider-thumb]:cursor-pointer"
                           aria-label="Borda arredondada em pixels"
+                        />
+                      </div>
+                      <div className="space-y-1.5">
+                        <div className="flex justify-between text-[11px] text-black/50">
+                          <span>Gap entre containers</span>
+                          <span>{containerGapDraft}px</span>
+                        </div>
+                        <input
+                          type="range"
+                          min={0}
+                          max={60}
+                          step={2}
+                          value={containerGapDraft}
+                          onChange={(e) => {
+                            const v = Number(e.target.value);
+                            setContainerGapDraft(v);
+                            savePageContainerLayout(containerPaddingDraft, containerRadiusDraft, v);
+                          }}
+                          className="w-full h-2 rounded-full appearance-none bg-muted accent-primary [&::-webkit-slider-thumb]:appearance-none [&::-webkit-slider-thumb]:h-4 [&::-webkit-slider-thumb]:w-4 [&::-webkit-slider-thumb]:rounded-full [&::-webkit-slider-thumb]:bg-primary [&::-webkit-slider-thumb]:cursor-pointer"
+                          aria-label="Gap entre containers em pixels"
                         />
                       </div>
                     </div>
