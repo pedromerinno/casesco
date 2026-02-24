@@ -1,6 +1,7 @@
 import * as React from "react";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
-import { UploadCloud, Film, Trash2, Loader2, AlertCircle } from "lucide-react";
+import { LayoutGrid, List, Search, UploadCloud, Film, Trash2, Loader2, AlertCircle } from "lucide-react";
+import { getOptimizedUrl } from "@/lib/onmx/image";
 import * as UpChunk from "@mux/upchunk";
 
 import {
@@ -11,6 +12,7 @@ import {
   DialogDescription,
 } from "@/components/ui/dialog";
 import { Button } from "@/components/ui/button";
+import { Input } from "@/components/ui/input";
 import { toast } from "@/components/ui/sonner";
 import {
   getMediaLibrary,
@@ -68,7 +70,16 @@ export default function MediaLibraryDialog({
   const fileInputRef = React.useRef<HTMLInputElement>(null);
   const [uploading, setUploading] = React.useState(false);
   const [uploadProgress, setUploadProgress] = React.useState(0);
+  const [searchQuery, setSearchQuery] = React.useState("");
+  const [viewMode, setViewMode] = React.useState<"cards" | "list">(() => {
+    if (typeof window === "undefined") return "cards";
+    return (localStorage.getItem("media_library_view") as "cards" | "list") || "cards";
+  });
   const lastMuxSyncAtRef = React.useRef<Record<string, number>>({});
+
+  React.useEffect(() => {
+    localStorage.setItem("media_library_view", viewMode);
+  }, [viewMode]);
 
   const filter = accept === "all" ? undefined : accept;
 
@@ -85,7 +96,18 @@ export default function MediaLibraryDialog({
     },
   });
 
-  const items = (mediaQuery.data as MediaItem[] | undefined) ?? [];
+  const rawItems = (mediaQuery.data as MediaItem[] | undefined) ?? [];
+  const items = React.useMemo(() => {
+    const q = searchQuery.trim().toLowerCase();
+    if (!q) return rawItems;
+    return rawItems.filter((item) => {
+      const name =
+        item.title ??
+        item.storage_path?.split("/").filter(Boolean).pop() ??
+        "";
+      return name.toLowerCase().includes(q);
+    });
+  }, [rawItems, searchQuery]);
   const isLoading = mediaQuery.isLoading;
 
   // Safety net: if the webhook missed an event, we can still resolve the upload
@@ -215,15 +237,32 @@ export default function MediaLibraryDialog({
         ? "image/png,image/jpeg,image/webp"
         : "image/png,image/jpeg,image/webp,video/*";
 
+  React.useEffect(() => {
+    if (!open) setSearchQuery("");
+  }, [open]);
+
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogContent className="max-w-2xl max-h-[80vh] flex flex-col">
+      <DialogContent className="max-w-4xl w-[90vw] max-h-[90vh] flex flex-col">
         <DialogHeader>
           <DialogTitle>Biblioteca de mídia</DialogTitle>
           <DialogDescription>
             Selecione um arquivo existente ou faça upload de um ou mais arquivos.
           </DialogDescription>
         </DialogHeader>
+
+        {/* Buscar */}
+        <div className="relative">
+          <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground pointer-events-none" />
+          <Input
+            type="search"
+            placeholder="Buscar por nome do arquivo…"
+            value={searchQuery}
+            onChange={(e) => setSearchQuery(e.target.value)}
+            className="pl-9 h-9"
+            aria-label="Buscar na biblioteca"
+          />
+        </div>
 
         {/* Toolbar */}
         <div className="flex items-center gap-2">
@@ -265,9 +304,39 @@ export default function MediaLibraryDialog({
               </span>
             </div>
           )}
+          <div className="flex items-center gap-1 rounded-lg p-0.5 bg-muted/50 ml-auto">
+            <button
+              type="button"
+              onClick={() => setViewMode("cards")}
+              className={cn(
+                "rounded-md p-2 transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring",
+                viewMode === "cards"
+                  ? "bg-background text-foreground shadow-sm"
+                  : "text-muted-foreground hover:text-foreground",
+              )}
+              aria-label="Ver em cards"
+              title="Cards"
+            >
+              <LayoutGrid className="h-4 w-4" />
+            </button>
+            <button
+              type="button"
+              onClick={() => setViewMode("list")}
+              className={cn(
+                "rounded-md p-2 transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring",
+                viewMode === "list"
+                  ? "bg-background text-foreground shadow-sm"
+                  : "text-muted-foreground hover:text-foreground",
+              )}
+              aria-label="Ver em lista"
+              title="Lista"
+            >
+              <List className="h-4 w-4" />
+            </button>
+          </div>
         </div>
 
-        {/* Grid */}
+        {/* Grid / List */}
         <div className="flex-1 overflow-y-auto min-h-0">
           {isLoading ? (
             <div className="flex items-center justify-center py-12 text-sm text-muted-foreground">
@@ -276,10 +345,92 @@ export default function MediaLibraryDialog({
             </div>
           ) : items.length === 0 ? (
             <div className="flex items-center justify-center py-12 text-sm text-muted-foreground">
-              Nenhum arquivo na biblioteca. Faça upload para começar.
+              {searchQuery.trim()
+                ? "Nenhum resultado para a busca."
+                : "Nenhum arquivo na biblioteca. Faça upload para começar."}
             </div>
+          ) : viewMode === "list" ? (
+            <ul className="divide-y divide-border rounded-lg border border-border overflow-hidden">
+              {items.map((item) => {
+                const selectable = isSelectable(item);
+                const processing =
+                  item.mux_status === "waiting" ||
+                  item.mux_status === "preparing";
+                const errored = item.mux_status === "errored";
+
+                return (
+                  <li
+                    key={item.id}
+                    className={cn(
+                      "flex items-center gap-3 px-3 py-2 bg-background hover:bg-muted/50 transition-colors",
+                      !selectable && "opacity-70",
+                    )}
+                  >
+                    <div className="w-12 h-12 rounded-md overflow-hidden bg-muted shrink-0 flex items-center justify-center">
+                      {item.type === "image" ? (
+                        <img
+                          src={getOptimizedUrl(item.url, { w: 200, q: 75 })}
+                          alt=""
+                          loading="lazy"
+                          className="w-full h-full object-cover"
+                        />
+                      ) : item.mux_playback_id ? (
+                        <img
+                          src={`https://image.mux.com/${item.mux_playback_id}/thumbnail.jpg?width=96&height=96&fit_mode=smartcrop`}
+                          alt=""
+                          className="w-full h-full object-cover bg-black/10"
+                        />
+                      ) : item.url ? (
+                        <VideoThumbFallback url={item.url} displayName={getDisplayName(item)} />
+                      ) : (
+                        <Film className="h-5 w-5 text-muted-foreground" />
+                      )}
+                    </div>
+                    <div className="min-w-0 flex-1">
+                      <p className="text-sm font-medium truncate">
+                        {getDisplayName(item)}
+                      </p>
+                      <div className="flex items-center gap-2 text-xs text-muted-foreground">
+                        <span>{item.type === "image" ? "Imagem" : "Vídeo"}</span>
+                        {processing && (
+                          <span className="flex items-center gap-1">
+                            <Loader2 className="h-3 w-3 animate-spin" />
+                            Processando…
+                          </span>
+                        )}
+                        {errored && (
+                          <span className="text-destructive flex items-center gap-1">
+                            <AlertCircle className="h-3 w-3" />
+                            Erro
+                          </span>
+                        )}
+                      </div>
+                    </div>
+                    <div className="flex items-center gap-1 shrink-0">
+                      <Button
+                        variant="outline"
+                        size="sm"
+                        disabled={!selectable}
+                        onClick={() => selectable && handleSelect(item)}
+                      >
+                        Selecionar
+                      </Button>
+                      <Button
+                        variant="ghost"
+                        size="icon"
+                        className="text-muted-foreground hover:text-destructive"
+                        onClick={(e) => handleDelete(e, item)}
+                        aria-label="Excluir da biblioteca"
+                      >
+                        <Trash2 className="h-4 w-4" />
+                      </Button>
+                    </div>
+                  </li>
+                );
+              })}
+            </ul>
           ) : (
-            <div className="grid grid-cols-3 sm:grid-cols-4 gap-2">
+            <div className="grid grid-cols-4 sm:grid-cols-5 md:grid-cols-6 gap-2">
               {items.map((item) => {
                 const selectable = isSelectable(item);
                 const processing =
@@ -309,8 +460,10 @@ export default function MediaLibraryDialog({
                     </button>
                     {item.type === "image" ? (
                       <img
-                        src={item.url}
+                        src={getOptimizedUrl(item.url, { w: 300, q: 75 })}
                         alt={getDisplayName(item)}
+                        loading="lazy"
+                        decoding="async"
                         className="absolute inset-0 w-full h-full object-cover pointer-events-none"
                       />
                     ) : item.mux_playback_id ? (
@@ -329,7 +482,6 @@ export default function MediaLibraryDialog({
                       </div>
                     )}
 
-                    {/* Processing overlay */}
                     {processing && (
                       <div className="absolute inset-0 flex flex-col items-center justify-center bg-black/50 pointer-events-none">
                         <Loader2 className="h-6 w-6 text-white animate-spin" />
@@ -339,7 +491,6 @@ export default function MediaLibraryDialog({
                       </div>
                     )}
 
-                    {/* Error overlay */}
                     {errored && (
                       <div className="absolute inset-0 flex flex-col items-center justify-center bg-black/50 pointer-events-none">
                         <AlertCircle className="h-6 w-6 text-red-400" />
@@ -349,7 +500,6 @@ export default function MediaLibraryDialog({
                       </div>
                     )}
 
-                    {/* Delete button: fora do botão desabilitado para funcionar em itens processando */}
                     <button
                       type="button"
                       onClick={(e) => handleDelete(e, item)}
@@ -364,7 +514,6 @@ export default function MediaLibraryDialog({
                       <Trash2 className="h-3 w-3" />
                     </button>
 
-                    {/* Filename overlay */}
                     <div className="absolute inset-x-0 bottom-0 bg-black/60 px-1.5 py-1 pointer-events-none">
                       <p className="text-[10px] text-white truncate">
                         {getDisplayName(item)}

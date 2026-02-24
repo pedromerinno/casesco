@@ -1,6 +1,6 @@
 import * as React from "react";
 import {
-  getImageKitUrl,
+  getOptimizedUrl,
   getResponsiveSrcset,
   IMAGE_PRESETS,
   type ImagePreset,
@@ -30,39 +30,20 @@ export const OptimizedImage = React.forwardRef<
     ...transforms,
   };
 
-  const optimizedSrc = getImageKitUrl(rawSrc, options);
+  const optimizedSrc = getOptimizedUrl(rawSrc, options);
   const srcSet =
     widths && widths.length > 0
       ? getResponsiveSrcset(rawSrc, options, widths)
       : undefined;
 
-  const [useFallback, setUseFallback] = React.useState(false);
-
-  // Reset fallback when src changes.
-  React.useEffect(() => {
-    setUseFallback(false);
-  }, [rawSrc]);
-
-  const finalSrc = useFallback ? rawSrc : optimizedSrc;
-  const finalSrcSet = useFallback ? undefined : srcSet || undefined;
-
-  const onError: React.ReactEventHandler<HTMLImageElement> = (e) => {
-    // If ImageKit isn't configured to fetch this remote URL yet, fall back to the original URL.
-    if (!useFallback && optimizedSrc !== rawSrc) {
-      setUseFallback(true);
-    }
-    rest.onError?.(e);
-  };
-
   return (
     <img
       ref={ref}
-      src={finalSrc}
-      srcSet={finalSrcSet}
-      sizes={finalSrcSet ? sizes : undefined}
+      src={optimizedSrc}
+      srcSet={srcSet}
+      sizes={srcSet ? sizes : undefined}
       loading={priority ? "eager" : "lazy"}
       decoding={priority ? "sync" : "async"}
-      onError={onError}
       {...rest}
     />
   );

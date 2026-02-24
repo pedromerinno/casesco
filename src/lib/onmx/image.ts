@@ -1,79 +1,62 @@
-const IMAGEKIT_ENDPOINT = import.meta.env.VITE_IMAGEKIT_URL_ENDPOINT as
-  | string
-  | undefined;
+// ── Supabase Image Transformation ────────────────────────────
+// Uses Supabase's native /render/image/ endpoint to resize and
+// optimise images on the fly. No external service needed.
+//
+// Docs: https://supabase.com/docs/guides/storage/serving/image-transformations
 
 export type ImageTransformOptions = {
   w?: number;
   h?: number;
   q?: number;
-  f?: "auto" | "avif" | "webp" | "jpg" | "png";
-  fo?: "center" | "top" | "bottom" | "left" | "right" | "auto";
+  f?: "origin" | "avif" | "webp";
+  resize?: "cover" | "contain" | "fill";
 };
 
 export const IMAGE_PRESETS = {
-  hero: { w: 1920, q: 78, f: "auto", fo: "center" } as const,
-  card: { w: 800, q: 80, f: "auto", fo: "center" } as const,
-  thumb: { w: 300, q: 80, f: "auto" } as const,
-  logo: { w: 280, q: 85, f: "auto" } as const,
-  lightbox: { q: 82, f: "auto" } as const,
-  gallery: { w: 600, q: 80, f: "auto" } as const,
+  hero: { w: 1920, q: 78 } as const,
+  card: { w: 800, q: 80 } as const,
+  thumb: { w: 300, q: 80 } as const,
+  logo: { w: 280, q: 85 } as const,
+  lightbox: { q: 82 } as const,
+  gallery: { w: 600, q: 80 } as const,
 } satisfies Record<string, ImageTransformOptions>;
 
 export type ImagePreset = keyof typeof IMAGE_PRESETS;
 
-function buildTransformString(opts: ImageTransformOptions): string {
-  const parts: string[] = [];
-  if (opts.w) parts.push(`w-${opts.w}`);
-  if (opts.h) parts.push(`h-${opts.h}`);
-  if (opts.q) parts.push(`q-${opts.q}`);
-  if (opts.f) parts.push(`f-${opts.f}`);
-  if (opts.fo) parts.push(`fo-${opts.fo}`);
-  return parts.join(",");
+// ── Helpers ──────────────────────────────────────────────────
+
+const OBJECT_PUBLIC = "/storage/v1/object/public/";
+const RENDER_IMAGE = "/storage/v1/render/image/public/";
+
+function isSupabasePublicUrl(src: string): boolean {
+  return src.includes(OBJECT_PUBLIC);
 }
 
-function isAbsoluteUrl(src: string): boolean {
-  return src.startsWith("http://") || src.startsWith("https://");
+function toRenderUrl(src: string, opts: ImageTransformOptions): string {
+  // Replace /object/public/ → /render/image/public/ and append query params.
+  const base = src.replace(OBJECT_PUBLIC, RENDER_IMAGE);
+  const params = new URLSearchParams();
+  if (opts.w) params.set("width", String(opts.w));
+  if (opts.h) params.set("height", String(opts.h));
+  if (opts.q) params.set("quality", String(opts.q));
+  if (opts.f) params.set("format", opts.f);
+  // Supabase defaults to crop when only width or height is set.
+  // Use "contain" to scale proportionally unless explicitly overridden.
+  params.set("resize", opts.resize ?? "contain");
+  const qs = params.toString();
+  return qs ? `${base}?${qs}` : base;
 }
 
-function supabasePublicUrlToFolderPath(src: string): string | null {
-  // If your ImageKit origin is configured as a "Web Folder" pointing to:
-  //   https://<project>.supabase.co/storage/v1/object/public/
-  // then the folder path should be:
-  //   <bucket>/<path>
-  //
-  // Example:
-  //   src: https://<project>.supabase.co/storage/v1/object/public/case-covers/covers/a.jpg
-  //   ->   case-covers/covers/a.jpg
-  try {
-    const u = new URL(src);
-    const marker = "/storage/v1/object/public/";
-    const idx = u.pathname.indexOf(marker);
-    if (idx === -1) return null;
-    const rest = u.pathname.slice(idx + marker.length).replace(/^\/+/, "");
-    return rest.length > 0 ? rest : null;
-  } catch {
-    return null;
-  }
-}
+// ── Public API (same signatures as before) ───────────────────
 
-export function getImageKitUrl(
+export function getOptimizedUrl(
   src: string,
   options: ImageTransformOptions = {},
 ): string {
-  // Only proxy absolute URLs through ImageKit (web proxy / fetch).
-  // Relative paths (local assets) should remain untouched.
-  if (!IMAGEKIT_ENDPOINT || !isAbsoluteUrl(src)) return src;
-
-  const tr = buildTransformString(options);
-  const base = IMAGEKIT_ENDPOINT.replace(/\/$/, "");
-
-  // Prefer "Web Folder" style for Supabase public URLs, because
-  // some setups/accounts return 404 with absolute URL web-proxy fetch.
-  const folderPath = supabasePublicUrlToFolderPath(src);
-  if (folderPath) return tr ? `${base}/tr:${tr}/${folderPath}` : `${base}/${folderPath}`;
-
-  // Fallback to absolute URL fetch (web proxy).
-  return tr ? `${base}/tr:${tr}/${src}` : `${base}/${src}`;
+  if (!isSupabasePublicUrl(src)) return src;
+  const hasTransform = options.w || options.h || options.q || options.f || options.resize;
+  if (!hasTransform) return src;
+  return toRenderUrl(src, options);
 }
 
 export function getResponsiveSrcset(
@@ -81,12 +64,11 @@ export function getResponsiveSrcset(
   options: ImageTransformOptions = {},
   widths: number[] = [],
 ): string {
-  if (!IMAGEKIT_ENDPOINT || !isAbsoluteUrl(src) || widths.length === 0)
-    return "";
+  if (!isSupabasePublicUrl(src) || widths.length === 0) return "";
 
   return widths
     .map((w) => {
-      const url = getImageKitUrl(src, { ...options, w });
+      const url = getOptimizedUrl(src, { ...options, w });
       return `${url} ${w}w`;
     })
     .join(", ");
