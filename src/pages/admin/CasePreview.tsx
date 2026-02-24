@@ -323,14 +323,14 @@ export default function CasePreview() {
             <div
               className="flex flex-col"
               style={{
-                padding: `${caseQuery.data?.container_padding ?? 24}px`,
-                gap: `${caseQuery.data?.container_padding ?? 24}px`,
+                padding: `${caseQuery.data?.container_padding ?? 0}px`,
+                gap: 0,
               }}
             >
               {(blocksQuery.data ?? [])
                 .filter((b) => b.type === "container")
                 .map((block) => {
-                  const radius = caseQuery.data?.container_radius ?? 12;
+                  const radius = caseQuery.data?.container_radius ?? 0;
                   return (
                     <div
                       key={block.id}

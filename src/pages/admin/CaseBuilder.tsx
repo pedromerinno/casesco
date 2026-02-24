@@ -764,9 +764,9 @@ export default function CaseBuilder() {
   const [pageBackgroundDraft, setPageBackgroundDraft] = React.useState<string | null>(null);
   const pageBackgroundInitRef = React.useRef(false);
   const pageBackgroundRef = React.useRef<string | null>(null);
-  const [containerPaddingDraft, setContainerPaddingDraft] = React.useState<number>(24);
-  const [containerRadiusDraft, setContainerRadiusDraft] = React.useState<number>(12);
-  const containerLayoutRef = React.useRef<{ padding: number; radius: number }>({ padding: 24, radius: 12 });
+  const [containerPaddingDraft, setContainerPaddingDraft] = React.useState<number>(0);
+  const [containerRadiusDraft, setContainerRadiusDraft] = React.useState<number>(0);
+  const containerLayoutRef = React.useRef<{ padding: number; radius: number }>({ padding: 0, radius: 0 });
   const [focusedItem, setFocusedItem] = React.useState<{
     blockKey: string;
     columnIndex: number;
@@ -823,8 +823,8 @@ export default function CaseBuilder() {
 
   React.useEffect(() => {
     if (!caseQuery.data) return;
-    const p = caseQuery.data.container_padding ?? 24;
-    const r = caseQuery.data.container_radius ?? 12;
+    const p = caseQuery.data.container_padding ?? 0;
+    const r = caseQuery.data.container_radius ?? 0;
     setContainerPaddingDraft(p);
     setContainerRadiusDraft(r);
     containerLayoutRef.current = { padding: p, radius: r };
@@ -991,44 +991,15 @@ export default function CaseBuilder() {
     pageBackgroundRef.current = pageBackgroundDraft ?? caseQuery.data?.page_background ?? null;
   }, [pageBackgroundDraft, caseQuery.data?.page_background]);
 
-  async function savePageBackground(next: string | null) {
-    try {
-      pageBackgroundRef.current = next;
-      setPageBackgroundDraft(next);
-      const { error } = await supabase
-        .from("cases")
-        .update({ page_background: next })
-        .eq("id", caseId);
-      if (error) throw error;
-
-      await qc.invalidateQueries({ queryKey: ["admin", "case", caseId] });
-    } catch (err: any) {
-      toast.error(
-        err?.message ?? "Não foi possível salvar as configurações da página.",
-      );
-    }
+  function savePageBackground(next: string | null) {
+    pageBackgroundRef.current = next;
+    setPageBackgroundDraft(next);
   }
 
-  async function savePageContainerLayout(padding: number, radius: number) {
-    try {
-      containerLayoutRef.current = { padding, radius };
-      setContainerPaddingDraft(padding);
-      setContainerRadiusDraft(radius);
-      const { error } = await supabase
-        .from("cases")
-        .update({
-          container_padding: Math.max(0, Math.min(120, padding)),
-          container_radius: Math.max(0, Math.min(48, radius)),
-        })
-        .eq("id", caseId);
-      if (error) throw error;
-
-      await qc.invalidateQueries({ queryKey: ["admin", "case", caseId] });
-    } catch (err: any) {
-      toast.error(
-        err?.message ?? "Não foi possível salvar as configurações da página.",
-      );
-    }
+  function savePageContainerLayout(padding: number, radius: number) {
+    containerLayoutRef.current = { padding, radius };
+    setContainerPaddingDraft(padding);
+    setContainerRadiusDraft(radius);
   }
 
   function addContentItem(blockKey: string, columnIndex: number, type: ContentBlockType) {
@@ -1713,6 +1684,20 @@ export default function CaseBuilder() {
     try {
       await caseConfigFormRef.current?.submit?.();
       await saveCaseBlocks(caseId, drafts);
+
+      // Persist page-level settings (only saved on explicit Save/Publish)
+      const effectivePageBg = pageBackgroundRef.current ?? pageBackground;
+      const layout = containerLayoutRef.current;
+      const { error: pageErr } = await supabase
+        .from("cases")
+        .update({
+          page_background: effectivePageBg,
+          container_padding: Math.max(0, Math.min(120, layout.padding)),
+          container_radius: Math.max(0, Math.min(48, layout.radius)),
+        })
+        .eq("id", caseId);
+      if (pageErr) throw pageErr;
+
       await qc.invalidateQueries({ queryKey: ["admin", "case", caseId, "blocks"] });
       await qc.invalidateQueries({ queryKey: ["admin", "case", caseId] });
       const caseData = await qc.fetchQuery({ queryKey: ["admin", "case", caseId] }) as CaseRow | undefined;

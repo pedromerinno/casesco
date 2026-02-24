@@ -291,8 +291,8 @@ export default function BuilderPreview({
   onDeleteBlock,
   onOpenAddContentMenu,
   className,
-  containerPadding = 24,
-  containerRadius = 12,
+  containerPadding = 0,
+  containerRadius = 0,
 }: {
   blocks: CaseBlock[];
   active: PreviewTarget | null;
@@ -426,7 +426,7 @@ export default function BuilderPreview({
         style={{
           margin: 0,
           padding: containerPadding ?? 0,
-          gap: containerPadding ?? 0,
+          gap: 0,
         }}
         onMouseLeave={() => onHover?.(null)}
       >
@@ -557,10 +557,13 @@ export default function BuilderPreview({
                 className="grid"
                 style={{
                   gridTemplateColumns: `repeat(${c.columns}, minmax(0, 1fr))`,
+                  gridAutoRows: "min-content",
                   gap: 0,
                   rowGap: 0,
                   columnGap: 0,
                   margin: 0,
+                  fontSize: 0,
+                  lineHeight: 0,
                   ...(c.backgroundColor?.trim?.() ? { backgroundColor: c.backgroundColor } : {}),
                   ...(c.padding
                     ? {

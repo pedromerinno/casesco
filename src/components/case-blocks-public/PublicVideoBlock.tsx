@@ -11,8 +11,13 @@ const ASPECT_MAP: Record<string, string> = {
   original: "",
 };
 
-/** Classe do conteúdo (player/video) para proporção original: largura total, altura automática. */
-const ASPECT_INNER_ORIGINAL = "w-full h-auto";
+/** CSS aspect-ratio value used as inline style on the player itself. */
+const ASPECT_RATIO_VALUE: Record<string, string> = {
+  "16/9": "16/9",
+  "9/16": "9/16",
+  "1/1": "1/1",
+  original: "",
+};
 
 function getEmbedUrl(url: string, provider: string): string | null {
   if (provider === "youtube") {
@@ -90,6 +95,8 @@ function VideoFrame({
         paddingBottom: padding.bottom,
         paddingLeft: padding.left,
         paddingRight: padding.right,
+        fontSize: 0,
+        lineHeight: 0,
       }}
     >
       <div
@@ -98,10 +105,12 @@ function VideoFrame({
           {
             ["--onmx-media-w-mobile" as any]: widthMobilePct,
             ["--onmx-media-w-desktop" as any]: widthDesktopPct,
+            fontSize: 0,
+            lineHeight: 0,
           } as React.CSSProperties
         }
       >
-        <div style={{ borderRadius: radius, border, overflow: radius > 0 ? "hidden" : undefined }}>
+        <div style={{ borderRadius: radius, border, overflow: radius > 0 || border ? "hidden" : undefined, fontSize: 0, lineHeight: 0 }}>
           {children}
         </div>
       </div>
@@ -190,21 +199,27 @@ export default function PublicVideoBlock({ content }: Props) {
           ["--bottom-controls" as any]: "none",
         } as React.CSSProperties);
 
+    const aspectRatio = isOriginalAspect ? undefined : (ASPECT_RATIO_VALUE[aspectKey] || "16/9");
+
     return (
       <VideoFrame content={content}>
         <div
           className={cn(
-            "w-full block overflow-hidden",
-            !isOriginalAspect && aspect,
+            "w-full overflow-hidden",
             controls ? "" : "mux-no-controls",
           )}
+          style={{ fontSize: 0, lineHeight: 0 }}
         >
           <MuxPlayer
             ref={ref}
             playbackId={content.muxPlaybackId}
             streamType="on-demand"
-            className={isOriginalAspect ? ASPECT_INNER_ORIGINAL : `w-full h-full ${aspect}`}
-            style={muxStyle}
+            className="w-full h-auto"
+            style={{
+              ...muxStyle,
+              aspectRatio,
+              display: "block",
+            }}
             controls={controls}
             hideControls={!controls}
             autoPlay={autoPlay ? "muted" : undefined}
@@ -228,6 +243,8 @@ export default function PublicVideoBlock({ content }: Props) {
       el.play().catch(() => {});
     }, [autoPlay, content.url]);
 
+    const fileAspectRatio = isOriginalAspect ? undefined : (ASPECT_RATIO_VALUE[aspectKey] || "16/9");
+
     return (
       <VideoFrame content={content}>
         <video
@@ -238,7 +255,8 @@ export default function PublicVideoBlock({ content }: Props) {
           muted={autoPlay || !controls}
           playsInline
           loop={loop}
-          className={isOriginalAspect ? ASPECT_INNER_ORIGINAL : `w-full ${aspect}`}
+          className="w-full h-auto object-cover"
+          style={{ aspectRatio: fileAspectRatio, display: "block" }}
         />
       </VideoFrame>
     );
@@ -282,22 +300,18 @@ export default function PublicVideoBlock({ content }: Props) {
     );
   }
 
+  const embedAspectRatio = isOriginalAspect ? "16/9" : (ASPECT_RATIO_VALUE[aspectKey] || "16/9");
+
   return (
     <VideoFrame content={content}>
-      <div
-        className={cn(
-          "relative w-full",
-          isOriginalAspect ? "aspect-video" : aspect,
-        )}
-      >
-        <iframe
-          src={embedUrl}
-          title="Video"
-          allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture"
-          allowFullScreen
-          className="absolute inset-0 w-full h-full"
-        />
-      </div>
+      <iframe
+        src={embedUrl}
+        title="Video"
+        allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture"
+        allowFullScreen
+        className="w-full"
+        style={{ aspectRatio: embedAspectRatio, display: "block", border: 0 }}
+      />
     </VideoFrame>
   );
 }

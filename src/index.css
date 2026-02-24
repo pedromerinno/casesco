@@ -162,18 +162,34 @@
     display: none !important;
   }
 
-  /* Container: no extra space between items (e.g. two videos in a column) */
-  .public-container-block video,
-  .public-container-block mux-player {
+  /* Global: eliminate inline gap below video/mux-player elements */
+  mux-player,
+  video {
+    display: block !important;
+    vertical-align: top;
     margin: 0 !important;
-    display: block;
+    padding: 0 !important;
+    line-height: 0;
+    font-size: 0;
+  }
+
+  /* Mux Player host: collapse to aspect-ratio wrapper size */
+  mux-player {
+    max-height: 100%;
+    overflow: hidden;
+  }
+
+  /* Container: no extra space between items */
+  .public-container-block,
+  .public-container-block > div {
+    font-size: 0;
+    line-height: 0;
   }
 
   .public-container-block .flex.flex-col {
     gap: 0 !important;
   }
 
-  /* Remove any vertical gap from aspect-ratio or inline spacing */
   .public-container-block [class*="aspect-"] {
     margin: 0 !important;
     vertical-align: top;
@@ -182,14 +198,6 @@
   /* Builder preview: remove padding from block content so items sit flush (except video: keep padding) */
   .builder-preview .block-content-padding:not(.block-content-padding-keep) {
     padding: 0 !important;
-  }
-
-  /* Video/Mux: no extra space below (inline gap) */
-  .builder-preview mux-player,
-  .builder-preview video {
-    display: block !important;
-    vertical-align: top;
-    margin: 0 !important;
   }
 }
 

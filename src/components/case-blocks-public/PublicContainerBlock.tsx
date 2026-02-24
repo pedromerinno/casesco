@@ -66,9 +66,12 @@ export default function PublicContainerBlock({ content, interactive }: Props) {
       className="public-container-block grid"
       style={{
         gridTemplateColumns: `repeat(${c.columns}, 1fr)`,
+        gridAutoRows: "min-content",
         gap: 0,
         rowGap: 0,
         columnGap: 0,
+        fontSize: 0,
+        lineHeight: 0,
         ...(bgColor ? { backgroundColor: bgColor } : {}),
         ...(padding
           ? {
