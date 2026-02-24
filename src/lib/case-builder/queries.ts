@@ -275,6 +275,7 @@ export type CaseRow = {
   services: string[] | null;
   status: string | null;
   published_at: string | null;
+  sort_order: number | null;
   clients: { id: string; name: string } | null;
   categories: { id: string; name: string }[];
 };
@@ -283,9 +284,10 @@ export async function getCases(companyId: string): Promise<CaseRow[]> {
   const { data, error } = await supabase
     .from("cases")
     .select(
-      "id,title,slug,summary,year,cover_image_url,cover_video_url,cover_mux_playback_id,page_background,container_padding,container_radius,container_gap,services,status,published_at,clients(id,name),case_category_cases(case_categories(id,name))",
+      "id,title,slug,summary,year,cover_image_url,cover_video_url,cover_mux_playback_id,page_background,container_padding,container_radius,container_gap,services,status,published_at,sort_order,clients(id,name),case_category_cases(case_categories(id,name))",
     )
     .eq("owner_company_id", companyId)
+    .order("sort_order", { ascending: true, nullsFirst: false })
     .order("created_at", { ascending: false });
   if (error) throw error;
 
@@ -306,10 +308,25 @@ export async function getCases(companyId: string): Promise<CaseRow[]> {
       services: row.services,
       status: row.status,
       published_at: row.published_at,
+      sort_order: row.sort_order ?? null,
       clients: row.clients,
       categories: (row.case_category_cases ?? [])
         .map((cc: any) => cc.case_categories)
         .filter(Boolean),
     })) ?? []
+  );
+}
+
+export async function reorderCases(orderedIds: string[]): Promise<void> {
+  await Promise.all(
+    orderedIds.map((id, index) =>
+      supabase
+        .from("cases")
+        .update({ sort_order: index })
+        .eq("id", id)
+        .then(({ error }) => {
+          if (error) throw error;
+        }),
+    ),
   );
 }

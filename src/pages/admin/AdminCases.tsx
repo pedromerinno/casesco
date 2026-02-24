@@ -1,13 +1,31 @@
 import * as React from "react";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { useNavigate } from "react-router-dom";
-import { LayoutGrid, List, MoreHorizontal, Pencil, Plus, Trash2 } from "lucide-react";
+import { GripVertical, LayoutGrid, List, MoreHorizontal, Pencil, Plus, Trash2 } from "lucide-react";
+import {
+  DndContext,
+  closestCenter,
+  PointerSensor,
+  useSensor,
+  useSensors,
+  DragEndEvent,
+  DragStartEvent,
+  DragOverlay,
+} from "@dnd-kit/core";
+import {
+  SortableContext,
+  verticalListSortingStrategy,
+  rectSortingStrategy,
+  useSortable,
+  arrayMove,
+} from "@dnd-kit/sortable";
+import { CSS } from "@dnd-kit/utilities";
 
 import { AdminPageSkeleton } from "@/components/admin/AdminPageSkeleton";
 import { Button } from "@/components/ui/button";
 import { useToast } from "@/hooks/use-toast";
 import { supabase } from "@/lib/supabase/client";
-import { getCases, getClients } from "@/lib/case-builder/queries";
+import { getCases, getClients, reorderCases, type CaseRow } from "@/lib/case-builder/queries";
 import { useCompany } from "@/lib/company-context";
 import { toSlug } from "@/lib/onmx/slug";
 import {
@@ -18,6 +36,242 @@ import {
   DialogDescription,
   DialogFooter,
 } from "@/components/ui/dialog";
+
+// ── Sortable wrappers ────────────────────────────────────────────────
+
+function SortableListItem({
+  c,
+  navigate,
+  openDropdownCaseId,
+  setOpenDropdownCaseId,
+  dropdownMenuRef,
+  setCaseToRemove,
+}: {
+  c: CaseRow;
+  navigate: ReturnType<typeof useNavigate>;
+  openDropdownCaseId: string | null;
+  setOpenDropdownCaseId: (id: string | null) => void;
+  dropdownMenuRef: React.RefObject<HTMLDivElement | null>;
+  setCaseToRemove: (v: { id: string; title: string } | null) => void;
+}) {
+  const { attributes, listeners, setNodeRef, transform, transition, isDragging } = useSortable({
+    id: c.id,
+  });
+
+  const style: React.CSSProperties = {
+    transform: CSS.Transform.toString(transform),
+    transition,
+    opacity: isDragging ? 0.4 : 1,
+  };
+
+  return (
+    <div ref={setNodeRef} style={style} className="px-6 py-4 flex items-center justify-between gap-4">
+      <div className="flex items-center gap-3 min-w-0 flex-1">
+        <button
+          type="button"
+          className="shrink-0 cursor-grab active:cursor-grabbing text-muted-foreground hover:text-foreground touch-none"
+          {...attributes}
+          {...listeners}
+          aria-label="Arrastar para reordenar"
+        >
+          <GripVertical className="h-4 w-4" />
+        </button>
+        <div className="min-w-0">
+          <div className="font-medium truncate">{c.title}</div>
+          <div className="text-xs text-muted-foreground truncate">
+            {c.clients?.name ?? "—"} ·{" "}
+            {c.status === "published"
+              ? "Publicado"
+              : c.status === "restricted"
+                ? "Restrito"
+                : "Rascunho"}
+          </div>
+        </div>
+      </div>
+      <div className="flex items-center gap-2">
+        <Button
+          variant="outline"
+          size="icon"
+          onClick={() => navigate(`/admin/cases/${c.id}/builder`)}
+          aria-label="Editar"
+          className="hover:bg-muted hover:text-foreground"
+        >
+          <Pencil className="h-4 w-4" />
+        </Button>
+        <div
+          className="relative"
+          ref={openDropdownCaseId === c.id ? dropdownMenuRef : undefined}
+        >
+          <Button
+            variant="outline"
+            size="icon"
+            onClick={() => setOpenDropdownCaseId(openDropdownCaseId === c.id ? null : c.id)}
+            aria-label="Mais opções"
+            aria-expanded={openDropdownCaseId === c.id}
+            className="hover:bg-muted hover:text-foreground"
+          >
+            <MoreHorizontal className="h-4 w-4" />
+          </Button>
+          {openDropdownCaseId === c.id && (
+            <div
+              className="absolute right-0 top-full z-10 mt-1 min-w-[140px] rounded-lg border border-border bg-card py-1 shadow-lg"
+              role="menu"
+            >
+              <button
+                type="button"
+                className="flex w-full items-center gap-2 px-3 py-2 text-left text-sm text-destructive hover:bg-destructive/10"
+                onClick={() => {
+                  setCaseToRemove({ id: c.id, title: c.title });
+                  setOpenDropdownCaseId(null);
+                }}
+                role="menuitem"
+              >
+                <Trash2 className="h-4 w-4 shrink-0" />
+                Apagar
+              </button>
+            </div>
+          )}
+        </div>
+      </div>
+    </div>
+  );
+}
+
+function SortableCardItem({
+  c,
+  navigate,
+  openDropdownCaseId,
+  setOpenDropdownCaseId,
+  dropdownMenuRef,
+  setCaseToRemove,
+}: {
+  c: CaseRow;
+  navigate: ReturnType<typeof useNavigate>;
+  openDropdownCaseId: string | null;
+  setOpenDropdownCaseId: (id: string | null) => void;
+  dropdownMenuRef: React.RefObject<HTMLDivElement | null>;
+  setCaseToRemove: (v: { id: string; title: string } | null) => void;
+}) {
+  const { attributes, listeners, setNodeRef, transform, transition, isDragging } = useSortable({
+    id: c.id,
+  });
+
+  const style: React.CSSProperties = {
+    transform: CSS.Transform.toString(transform),
+    transition,
+    opacity: isDragging ? 0.4 : 1,
+  };
+
+  return (
+    <div
+      ref={setNodeRef}
+      style={style}
+      className="rounded-xl border border-border bg-background overflow-visible flex flex-col relative"
+    >
+      <button
+        type="button"
+        className="absolute top-2 left-2 z-10 cursor-grab active:cursor-grabbing text-muted-foreground hover:text-foreground bg-background/80 backdrop-blur-sm rounded-md p-1 touch-none"
+        {...attributes}
+        {...listeners}
+        aria-label="Arrastar para reordenar"
+      >
+        <GripVertical className="h-4 w-4" />
+      </button>
+      <div className="aspect-video bg-muted relative overflow-hidden rounded-t-xl">
+        {c.cover_image_url ? (
+          <img
+            src={c.cover_image_url}
+            alt=""
+            className="absolute inset-0 w-full h-full object-cover"
+          />
+        ) : (
+          <div className="absolute inset-0 grid place-items-center text-muted-foreground text-sm">
+            Sem capa
+          </div>
+        )}
+      </div>
+      <div className="p-4 flex-1 flex flex-col min-w-0">
+        <div className="font-medium truncate">{c.title}</div>
+        <div className="text-xs text-muted-foreground truncate mt-0.5">
+          {c.clients?.name ?? "—"}
+        </div>
+        <span
+          className={`mt-2 inline-flex w-fit text-xs font-medium px-2 py-0.5 rounded-full ${
+            c.status === "published"
+              ? "bg-green-500/10 text-green-700"
+              : c.status === "restricted"
+                ? "bg-amber-500/10 text-amber-700"
+                : "bg-muted text-muted-foreground"
+          }`}
+        >
+          {c.status === "published"
+            ? "Publicado"
+            : c.status === "restricted"
+              ? "Restrito"
+              : "Rascunho"}
+        </span>
+      </div>
+      <div className="p-4 pt-0 flex items-center gap-2">
+        <Button
+          variant="outline"
+          size="sm"
+          className="flex-1 gap-1 hover:bg-muted hover:text-foreground"
+          onClick={() => navigate(`/admin/cases/${c.id}/builder`)}
+        >
+          <Pencil className="h-3.5 w-3.5" />
+          Editar
+        </Button>
+        <div
+          className="relative shrink-0"
+          ref={openDropdownCaseId === c.id ? dropdownMenuRef : undefined}
+        >
+          <Button
+            variant="outline"
+            size="icon"
+            onClick={() => setOpenDropdownCaseId(openDropdownCaseId === c.id ? null : c.id)}
+            aria-label="Mais opções"
+            aria-expanded={openDropdownCaseId === c.id}
+            className="hover:bg-muted hover:text-foreground"
+          >
+            <MoreHorizontal className="h-4 w-4" />
+          </Button>
+          {openDropdownCaseId === c.id && (
+            <div
+              className="absolute right-0 top-full z-10 mt-1 min-w-[140px] rounded-lg border border-border bg-card py-1 shadow-lg"
+              role="menu"
+            >
+              <button
+                type="button"
+                className="flex w-full items-center gap-2 px-3 py-2 text-left text-sm text-destructive hover:bg-destructive/10"
+                onClick={() => {
+                  setCaseToRemove({ id: c.id, title: c.title });
+                  setOpenDropdownCaseId(null);
+                }}
+                role="menuitem"
+              >
+                <Trash2 className="h-4 w-4 shrink-0" />
+                Apagar
+              </button>
+            </div>
+          )}
+        </div>
+      </div>
+    </div>
+  );
+}
+
+// ── Ghost overlay for dragging ───────────────────────────────────────
+
+function DragGhost({ c }: { c: CaseRow }) {
+  return (
+    <div className="rounded-xl border border-border bg-card shadow-lg px-4 py-3 max-w-xs">
+      <div className="font-medium truncate text-sm">{c.title}</div>
+      <div className="text-xs text-muted-foreground truncate">{c.clients?.name ?? "—"}</div>
+    </div>
+  );
+}
+
+// ── Main component ───────────────────────────────────────────────────
 
 export default function AdminCases() {
   const { toast } = useToast();
@@ -67,6 +321,49 @@ export default function AdminCases() {
     staleTime: 30 * 1000,
   });
 
+  // ── DnD state ────────────────────────────────────────────────────
+  const [localOrder, setLocalOrder] = React.useState<CaseRow[]>([]);
+  const [activeId, setActiveId] = React.useState<string | null>(null);
+
+  React.useEffect(() => {
+    if (data) setLocalOrder(data);
+  }, [data]);
+
+  const sensors = useSensors(
+    useSensor(PointerSensor, { activationConstraint: { distance: 5 } }),
+  );
+
+  function handleDragStart(event: DragStartEvent) {
+    setActiveId(event.active.id as string);
+  }
+
+  function handleDragEnd(event: DragEndEvent) {
+    setActiveId(null);
+    const { active, over } = event;
+    if (!over || active.id === over.id) return;
+
+    const oldIndex = localOrder.findIndex((c) => c.id === active.id);
+    const newIndex = localOrder.findIndex((c) => c.id === over.id);
+    if (oldIndex === -1 || newIndex === -1) return;
+
+    const prev = localOrder;
+    const newOrder = arrayMove(localOrder, oldIndex, newIndex);
+    setLocalOrder(newOrder);
+
+    reorderCases(newOrder.map((c) => c.id)).catch(() => {
+      setLocalOrder(prev);
+      toast({
+        title: "Erro ao reordenar",
+        description: "Não foi possível salvar a nova ordem.",
+        variant: "destructive",
+      });
+    });
+  }
+
+  const activeCase = activeId ? localOrder.find((c) => c.id === activeId) ?? null : null;
+
+  // ── CRUD ─────────────────────────────────────────────────────────
+
   async function handleCreateAndOpenBuilder() {
     const title = newCaseTitle.trim();
     if (!title) {
@@ -76,14 +373,13 @@ export default function AdminCases() {
 
     let clientId = newCaseClientId;
 
-    // If creating a new client inline
     if (creatingNewClient) {
       const clientName = newClientName.trim();
       if (!clientName) {
         toast({ title: "Informe o nome do cliente", variant: "destructive" });
         return;
       }
-      clientId = ""; // will be set after insert
+      clientId = "";
     } else if (!clientId) {
       toast({ title: "Selecione o cliente", variant: "destructive" });
       return;
@@ -91,7 +387,6 @@ export default function AdminCases() {
 
     setCreating(true);
     try {
-      // Create client first if needed
       if (creatingNewClient) {
         const clientName = newClientName.trim();
         const { data: newClient, error: clientError } = await supabase
@@ -284,7 +579,7 @@ export default function AdminCases() {
       <div className="rounded-2xl border border-border bg-card overflow-visible">
         <div className="px-6 py-4 border-b border-border flex items-center justify-between gap-4">
           <span className="text-sm text-muted-foreground">
-            {data?.length ?? 0} cases
+            {localOrder.length} cases
           </span>
           <div className="flex items-center gap-1 rounded-lg p-1 bg-muted/50">
             <button
@@ -306,161 +601,53 @@ export default function AdminCases() {
           </div>
         </div>
 
-        {viewMode === "list" ? (
-          <div className="divide-y divide-border">
-            {(data ?? []).map((c) => (
-              <div key={c.id} className="px-6 py-4 flex items-center justify-between gap-4">
-                <div className="min-w-0">
-                  <div className="font-medium truncate">{c.title}</div>
-                  <div className="text-xs text-muted-foreground truncate">
-                    {c.clients?.name ?? "—"} ·{" "}
-                    {c.status === "published"
-                      ? "Publicado"
-                      : c.status === "restricted"
-                        ? "Restrito"
-                        : "Rascunho"}
-                  </div>
-                </div>
-                <div className="flex items-center gap-2">
-                  <Button
-                    variant="outline"
-                    size="icon"
-                    onClick={() => navigate(`/admin/cases/${c.id}/builder`)}
-                    aria-label="Editar"
-                    className="hover:bg-muted hover:text-foreground"
-                  >
-                    <Pencil className="h-4 w-4" />
-                  </Button>
-                  <div
-                    className="relative"
-                    ref={openDropdownCaseId === c.id ? dropdownMenuRef : undefined}
-                  >
-                    <Button
-                      variant="outline"
-                      size="icon"
-                      onClick={() => setOpenDropdownCaseId(openDropdownCaseId === c.id ? null : c.id)}
-                      aria-label="Mais opções"
-                      aria-expanded={openDropdownCaseId === c.id}
-                      className="hover:bg-muted hover:text-foreground"
-                    >
-                      <MoreHorizontal className="h-4 w-4" />
-                    </Button>
-                    {openDropdownCaseId === c.id && (
-                      <div
-                        className="absolute right-0 top-full z-10 mt-1 min-w-[140px] rounded-lg border border-border bg-card py-1 shadow-lg"
-                        role="menu"
-                      >
-                        <button
-                          type="button"
-                          className="flex w-full items-center gap-2 px-3 py-2 text-left text-sm text-destructive hover:bg-destructive/10"
-                          onClick={() => {
-                            setCaseToRemove({ id: c.id, title: c.title });
-                            setOpenDropdownCaseId(null);
-                          }}
-                          role="menuitem"
-                        >
-                          <Trash2 className="h-4 w-4 shrink-0" />
-                          Apagar
-                        </button>
-                      </div>
-                    )}
-                  </div>
-                </div>
+        <DndContext
+          sensors={sensors}
+          collisionDetection={closestCenter}
+          onDragStart={handleDragStart}
+          onDragEnd={handleDragEnd}
+        >
+          <SortableContext
+            items={localOrder.map((c) => c.id)}
+            strategy={viewMode === "list" ? verticalListSortingStrategy : rectSortingStrategy}
+          >
+            {viewMode === "list" ? (
+              <div className="divide-y divide-border">
+                {localOrder.map((c) => (
+                  <SortableListItem
+                    key={c.id}
+                    c={c}
+                    navigate={navigate}
+                    openDropdownCaseId={openDropdownCaseId}
+                    setOpenDropdownCaseId={setOpenDropdownCaseId}
+                    dropdownMenuRef={dropdownMenuRef}
+                    setCaseToRemove={setCaseToRemove}
+                  />
+                ))}
               </div>
-            ))}
-          </div>
-        ) : (
-          <div className="p-6 grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
-            {(data ?? []).map((c) => (
-              <div
-                key={c.id}
-                className="rounded-xl border border-border bg-background overflow-visible flex flex-col"
-              >
-                <div className="aspect-video bg-muted relative overflow-hidden rounded-t-xl">
-                  {c.cover_image_url ? (
-                    <img
-                      src={c.cover_image_url}
-                      alt=""
-                      className="absolute inset-0 w-full h-full object-cover"
-                    />
-                  ) : (
-                    <div className="absolute inset-0 grid place-items-center text-muted-foreground text-sm">
-                      Sem capa
-                    </div>
-                  )}
-                </div>
-                <div className="p-4 flex-1 flex flex-col min-w-0">
-                  <div className="font-medium truncate">{c.title}</div>
-                  <div className="text-xs text-muted-foreground truncate mt-0.5">
-                    {c.clients?.name ?? "—"}
-                  </div>
-                  <span
-                    className={`mt-2 inline-flex w-fit text-xs font-medium px-2 py-0.5 rounded-full ${
-                      c.status === "published"
-                        ? "bg-green-500/10 text-green-700"
-                        : c.status === "restricted"
-                          ? "bg-amber-500/10 text-amber-700"
-                          : "bg-muted text-muted-foreground"
-                    }`}
-                  >
-                    {c.status === "published"
-                      ? "Publicado"
-                      : c.status === "restricted"
-                        ? "Restrito"
-                        : "Rascunho"}
-                  </span>
-                </div>
-                <div className="p-4 pt-0 flex items-center gap-2">
-                  <Button
-                    variant="outline"
-                    size="sm"
-                    className="flex-1 gap-1 hover:bg-muted hover:text-foreground"
-                    onClick={() => navigate(`/admin/cases/${c.id}/builder`)}
-                  >
-                    <Pencil className="h-3.5 w-3.5" />
-                    Editar
-                  </Button>
-                  <div
-                    className="relative shrink-0"
-                    ref={openDropdownCaseId === c.id ? dropdownMenuRef : undefined}
-                  >
-                    <Button
-                      variant="outline"
-                      size="icon"
-                      onClick={() => setOpenDropdownCaseId(openDropdownCaseId === c.id ? null : c.id)}
-                      aria-label="Mais opções"
-                      aria-expanded={openDropdownCaseId === c.id}
-                      className="hover:bg-muted hover:text-foreground"
-                    >
-                      <MoreHorizontal className="h-4 w-4" />
-                    </Button>
-                    {openDropdownCaseId === c.id && (
-                      <div
-                        className="absolute right-0 top-full z-10 mt-1 min-w-[140px] rounded-lg border border-border bg-card py-1 shadow-lg"
-                        role="menu"
-                      >
-                        <button
-                          type="button"
-                          className="flex w-full items-center gap-2 px-3 py-2 text-left text-sm text-destructive hover:bg-destructive/10"
-                          onClick={() => {
-                            setCaseToRemove({ id: c.id, title: c.title });
-                            setOpenDropdownCaseId(null);
-                          }}
-                          role="menuitem"
-                        >
-                          <Trash2 className="h-4 w-4 shrink-0" />
-                          Apagar
-                        </button>
-                      </div>
-                    )}
-                  </div>
-                </div>
+            ) : (
+              <div className="p-6 grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
+                {localOrder.map((c) => (
+                  <SortableCardItem
+                    key={c.id}
+                    c={c}
+                    navigate={navigate}
+                    openDropdownCaseId={openDropdownCaseId}
+                    setOpenDropdownCaseId={setOpenDropdownCaseId}
+                    dropdownMenuRef={dropdownMenuRef}
+                    setCaseToRemove={setCaseToRemove}
+                  />
+                ))}
               </div>
-            ))}
-          </div>
-        )}
+            )}
+          </SortableContext>
 
-        {!isLoading && (data?.length ?? 0) === 0 && (
+          <DragOverlay dropAnimation={null}>
+            {activeCase ? <DragGhost c={activeCase} /> : null}
+          </DragOverlay>
+        </DndContext>
+
+        {!isLoading && localOrder.length === 0 && (
           <div className="px-6 py-10 text-sm text-muted-foreground">Nenhum case cadastrado ainda.</div>
         )}
       </div>
