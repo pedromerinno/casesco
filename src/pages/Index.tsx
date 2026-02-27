@@ -1,10 +1,11 @@
 import * as React from "react";
-import { useNavigate } from "react-router-dom";
+import { Link, useNavigate } from "react-router-dom";
 
 import { supabase } from "@/lib/supabase/client";
 import { getUserAccessInfo } from "@/lib/supabase/admin";
 import { Button } from "@/components/ui/button";
-import { Input } from "@/components/ui/input";
+import { AuthLayout } from "@/components/auth/AuthLayout";
+import { LoginForm } from "@/components/auth/LoginForm";
 import { useToast } from "@/hooks/use-toast";
 
 export default function Index() {
@@ -54,52 +55,41 @@ export default function Index() {
   }
 
   return (
-    <main className="min-h-screen bg-background text-foreground flex items-center justify-center px-6 py-16">
-      <div className="w-full max-w-md rounded-2xl border border-border bg-card p-8">
-        <h1 className="font-display text-2xl font-semibold">MNNO®</h1>
-        <p className="mt-2 text-sm text-muted-foreground">
-          Entre com suas credenciais para acessar a plataforma.
-        </p>
-
-        <form onSubmit={onSubmit} className="mt-8 space-y-4">
-          <div className="space-y-2">
-            <label className="text-sm font-medium" htmlFor="email">
-              E-mail
-            </label>
-            <Input
-              id="email"
-              type="email"
-              autoComplete="email"
-              value={email}
-              onChange={(e) => setEmail(e.target.value)}
-              placeholder="voce@empresa.com"
-              required
-            />
-          </div>
-
-          <div className="space-y-2">
-            <label className="text-sm font-medium" htmlFor="password">
-              Senha
-            </label>
-            <Input
-              id="password"
-              type="password"
-              autoComplete="current-password"
-              value={password}
-              onChange={(e) => setPassword(e.target.value)}
-              required
-            />
-          </div>
-
-          <Button
-            type="submit"
-            className="w-full bg-[#c4b896] text-[#2c2420] hover:bg-[#b8a88a] focus-visible:ring-[#c4b896]"
-            disabled={loading}
-          >
-            {loading ? "Entrando…" : "Entrar"}
-          </Button>
-        </form>
-      </div>
-    </main>
+    <AuthLayout
+      backgroundImage="/IMG_001.jpeg"
+      brandCopyMain="Construindo um futuro melhor e mais bonito."
+      brandCopySecondary="De forma justa, organizada e coerente."
+      logo={
+        <>
+          <span className="text-2xl font-semibold tracking-tight text-white">
+            MNNO
+          </span>
+          <span className="rounded-full bg-white/80 px-2.5 py-0.5 text-xs font-medium text-slate-700 backdrop-blur-sm">
+            Cases
+          </span>
+        </>
+      }
+      topRight={
+        <Button
+          asChild
+          variant="outline"
+          size="sm"
+          className="rounded-lg border-slate-200 bg-white text-slate-700 hover:bg-slate-50 focus-visible:ring-slate-900/20"
+        >
+          <Link to="#">Solicitar conta</Link>
+        </Button>
+      }
+    >
+      <LoginForm
+        email={email}
+        password={password}
+        onEmailChange={setEmail}
+        onPasswordChange={setPassword}
+        onSubmit={onSubmit}
+        loading={loading}
+        showRememberAndForgot
+        showGoogle={false}
+      />
+    </AuthLayout>
   );
 }
