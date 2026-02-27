@@ -1,4 +1,5 @@
 import { supabase } from "@/lib/supabase/client";
+import { getBlurhashFromFile } from "./blurhash";
 import type { CaseBlock, DraftBlock } from "./types";
 
 // ── Shared helpers (moved from AdminCases) ──────────────────────────
@@ -70,9 +71,14 @@ export async function uploadCover(
   const { data } = supabase.storage.from("case-covers").getPublicUrl(path);
   const publicUrl = toPublicObjectUrl(data.publicUrl, "case-covers");
 
+  const coverBlurhash = await getBlurhashFromFile(file);
+
   const { data: updated, error: updateError } = await supabase
     .from("cases")
-    .update({ cover_image_url: publicUrl })
+    .update({
+      cover_image_url: publicUrl,
+      cover_blurhash: coverBlurhash ?? null,
+    })
     .eq("id", caseId)
     .select("cover_image_url")
     .single();

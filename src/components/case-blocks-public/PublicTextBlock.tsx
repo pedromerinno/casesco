@@ -45,7 +45,7 @@ export default function PublicTextBlock({ content }: Props) {
     colors.link?.trim?.() ? colors.link : undefined;
 
   const maxWClass =
-    maxWidth === "wide" ? "max-w-5xl" : maxWidth === "full" ? "max-w-none" : "max-w-3xl";
+    maxWidth === "wide" ? "max-w-screen-2xl" : maxWidth === "full" ? "max-w-none" : "max-w-6xl";
 
   const presetClass =
     preset === "title_1"

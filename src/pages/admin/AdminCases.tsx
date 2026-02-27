@@ -76,6 +76,19 @@ function SortableListItem({
         >
           <GripVertical className="h-4 w-4" />
         </button>
+        <div className="w-12 h-12 rounded-lg overflow-hidden bg-muted shrink-0 flex items-center justify-center">
+          {c.cover_image_url ? (
+            <img
+              src={c.cover_image_url}
+              alt=""
+              className="w-full h-full object-cover"
+            />
+          ) : (
+            <span className="text-[10px] text-muted-foreground text-center px-1">
+              Sem capa
+            </span>
+          )}
+        </div>
         <div className="min-w-0">
           <div className="font-medium truncate">{c.title}</div>
           <div className="text-xs text-muted-foreground truncate">
@@ -626,7 +639,10 @@ export default function AdminCases() {
                 ))}
               </div>
             ) : (
-              <div className="p-6 grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
+              <div
+                className="p-6 grid gap-4"
+                style={{ gridTemplateColumns: "repeat(auto-fill, minmax(min(260px, 100%), 1fr))" }}
+              >
                 {localOrder.map((c) => (
                   <SortableCardItem
                     key={c.id}

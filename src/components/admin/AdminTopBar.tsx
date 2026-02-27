@@ -89,7 +89,7 @@ export default function AdminTopBar({ onSignOut, userEmail, userName, userAvatar
   }
 
   return (
-    <header className="sticky top-0 z-50 h-16 w-full shrink-0 border-b border-[#f6f5f1] bg-[#fbfbf9]">
+    <header className="fixed top-0 left-0 right-0 z-50 h-16 w-full shrink-0 border-b border-[#f6f5f1] bg-[#fbfbf9]">
       <div className="flex h-full w-full items-center px-2">
         <div className="flex h-full w-full items-center justify-between gap-3">
           {/* Left: company selector */}

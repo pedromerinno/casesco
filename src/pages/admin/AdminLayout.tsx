@@ -58,13 +58,13 @@ export default function AdminLayout() {
         {isCaseFullscreenRoute ? (
           <Outlet />
         ) : (
-          <div className="w-full px-2">
+          <div className="w-full px-2 pt-16">
             <div className="flex gap-2">
               <AdminSidebar isSuperAdmin={accessInfo.isSuperAdmin} />
 
               <div className="min-w-0 flex-1 pt-2">
                 <main className="px-6 md:px-10 lg:px-12 py-10">
-                  <div className="mx-auto w-full max-w-6xl">
+                  <div className="mx-auto w-full max-w-7xl">
                     <div className="rounded-2xl bg-white p-6 md:p-8">
                       <Outlet />
                     </div>

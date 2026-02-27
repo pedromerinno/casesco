@@ -42,11 +42,11 @@ export default function PublicImageBlock({ content }: Props) {
   const widthBase =
     widthMobile === "fill"
       ? "w-full max-w-none"
-      : "w-full max-w-3xl mx-auto";
+      : "w-full max-w-6xl mx-auto";
   const widthMd =
     widthDesktop === "fill"
       ? "md:w-full md:max-w-none md:mx-0"
-      : "md:w-full md:max-w-3xl md:mx-auto";
+      : "md:w-full md:max-w-6xl md:mx-auto";
 
   const chromeClass = cn(
     widthBase,
