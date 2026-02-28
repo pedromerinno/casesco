@@ -5,7 +5,7 @@ const DEFAULT_BG_IMAGE = "/IMG_001.jpeg";
 
 type AuthLayoutProps = {
   children: React.ReactNode;
-  /** Conteúdo no canto superior direito do painel do formulário (ex: botão "Solicitar conta") */
+  /** Conteúdo no canto superior direito do painel do formulário (ex: botão "Solicitar acesso") */
   topRight?: React.ReactNode;
   /** URL da imagem de fundo do painel de marca. Fallback: fundo slate-900 só */
   backgroundImage?: string | null;

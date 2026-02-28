@@ -15,7 +15,7 @@ type LoginFormProps = {
   showRememberAndForgot?: boolean;
   /** Exibe bloco "Ou continue com" + botão Google (só UI; onGoogleLogin opcional) */
   showGoogle?: boolean;
-  /** URL para "Solicitar conta" (ex: "/cadastro"). Omitir para não exibir o link. */
+  /** URL para "Solicitar acesso" (ex: "/cadastro"). Omitir para não exibir o link. */
   signUpPath?: string;
   className?: string;
 };
@@ -154,7 +154,7 @@ export function LoginForm({
             to={signUpPath}
             className="font-medium text-slate-900 hover:underline focus:outline-none focus-visible:underline"
           >
-            Solicitar conta
+            Solicitar acesso
           </Link>
         </p>
       )}

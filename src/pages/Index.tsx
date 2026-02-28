@@ -56,7 +56,7 @@ export default function Index() {
 
   return (
     <AuthLayout
-      backgroundImage="/IMG_001.jpeg"
+      backgroundImage="/BG-cases.jpg"
       brandCopyMain="Construindo um futuro melhor e mais bonito."
       brandCopySecondary="De forma justa, organizada e coerente."
       logo={
@@ -76,7 +76,7 @@ export default function Index() {
           size="sm"
           className="rounded-lg border-slate-200 bg-white text-slate-700 hover:bg-slate-50 focus-visible:ring-slate-900/20"
         >
-          <Link to="#">Solicitar conta</Link>
+          <Link to="#">Solicitar acesso</Link>
         </Button>
       }
     >
